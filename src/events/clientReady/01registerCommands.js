@@ -5,8 +5,6 @@ import getApplicationCommands from '../../utils/getApplicationCommands.js';
 
 export default async (client) => {
   try {
-    console.log('Registering slash commands...');
-
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
     const localCommands = getLocalCommands();
     const guildIds = process.env.GUILD_ID ? JSON.parse(process.env.GUILD_ID) : [];

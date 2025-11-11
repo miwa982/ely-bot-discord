@@ -15,18 +15,18 @@ export default {
         {
           name: "📌 Checklist Commands",
           value: [
-            "`/checklist create [title] [description]` → Create a new checklist",
-            "`/checklist view` → Show today's checklist",
-            "`/checklist remove` → Remove today's checklist"
+            "`/checklist create [title] [description] [type]` → Create a new checklist",
+            "`/checklist view [type]` → Show today's checklist",
+            "`/checklist remove [type]` → Remove today's checklist"
           ].join("\n"),
           inline: false
         },
         {
           name: "📝 Task Commands",
           value: [
-            "`/task add <name>` → Add a new task",
-            "`/task edit <task_number> [title] [status]` → Edit a task",
-            "`/task remove <task_number>` → Remove a task"
+            "`/task add <name> [type]` → Add a new task",
+            "`/task edit <task_number> [title] [status] [type]` → Edit a task",
+            "`/task remove <task_number> [type]` → Remove a task"
           ].join("\n"),
           inline: false
         },
@@ -40,7 +40,7 @@ export default {
         {
           name: "💡 Tips",
           value: "You can mark tasks as `TODO 👀`, `IN PROGRESS ⌛`, or `DONE ✅`.\n" +
-                 "Use `/checklist view` anytime to refresh progress.",
+                 "Use `/checklist view [type]` anytime to refresh progress.",
           inline: false
         }
       )

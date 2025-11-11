@@ -18,6 +18,16 @@ export default {
                         .setRequired(true)
                         .setAutocomplete(true)
                 )
+                .addStringOption(option =>
+                    option
+                        .setName("type")
+                        .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+                        .setRequired(false)
+                        .addChoices(
+                            { name: "DAILY", value: "daily" },
+                            { name: "WEEKLY", value: "weekly" },
+                        ))
+
         )
         .addSubcommand((subcommand) =>
             subcommand
@@ -46,6 +56,15 @@ export default {
                             { name: "DONE ✅", value: "DONE" }
                         )
                 )
+                .addStringOption(option =>
+                    option
+                        .setName("type")
+                        .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+                        .setRequired(false)
+                        .addChoices(
+                            { name: "DAILY", value: "daily" },
+                            { name: "WEEKLY", value: "weekly" },
+                        ))
         ).addSubcommand((subcommand) =>
             subcommand
                 .setName("remove")
@@ -56,6 +75,15 @@ export default {
                         .setDescription("Which task number to remove (1, 2, 3...)")
                         .setRequired(true)
                 )
+                .addStringOption(option =>
+                    option
+                        .setName("type")
+                        .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+                        .setRequired(false)
+                        .addChoices(
+                            { name: "DAILY", value: "daily" },
+                            { name: "WEEKLY", value: "weekly" },
+                        ))
         ),
 
     run: async ({ interaction, client }) => {

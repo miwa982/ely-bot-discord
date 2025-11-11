@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PollLayoutType } from 'discord.js';
-import { getFormatedDate } from '../utils/date.js';
+import { getFormatedTodayDate } from '../utils/date.js';
 import {Elysia} from '../utils/elysia.js';
 
 const commandInfo = {
@@ -18,7 +18,7 @@ async function sendDailyPoll(interaction, channel, client) {
 
     await channel.send({
         poll: {
-            question: { text: `Daily commission (${getFormatedDate()})` },
+            question: { text: `Daily commission (${getFormatedTodayDate()})` },
             answers: [
                 { text: `Genshin Impact`, emoji: giIcon },
                 { text: `Honkai: Star Rail`, emoji: hsrIcon },

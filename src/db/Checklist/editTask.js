@@ -1,5 +1,5 @@
 import ChecklistSchema from "./checklistSchema.js";
-import { getTodayRangeUTC } from "../../utils/date.js";
+import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import { EmbedBuilder } from "discord.js";
 import TaskStatusType from "../../enum/TaskStatusType.js";
 
@@ -8,18 +8,21 @@ export async function editTask(interaction, client) {
     const taskNumber = interaction.options.getInteger("task_number");
     const newTitle = interaction.options.getString("title");
     const newStatus = interaction.options.getString("status");
+    const type = interaction.options.getString("type") ?? 'daily';
 
-    const { start, end } = getTodayRangeUTC(7);
+    const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     // Find today's checklist
     const checklist = await ChecklistSchema.findOne({
         ownerName: tag,
+        type: type,
         createdAt: { $gte: start, $lte: end }
     }).populate("items");
 
     if (!checklist) {
+        const messageCon = (!type || type === 'daily') ? 'today' : 'this week';
         return interaction.reply({
-            content: `❌ No checklist found for today.`,
+            content: `❌ No checklist found for ${messageCon}.`,
             ephemeral: true
         });
     }
@@ -63,9 +66,6 @@ export async function editTask(interaction, client) {
             .setDescription(
                 slice && slice.length > 0 ?
                     slice.map((task, idx) => `**${i + idx + 1}.** ${task.title} — \`${
-                        // TODO: "TODO 👀",
-                        // IN_PROGRESS: "IN PROGRESS... ⌛",
-                        // DONE: "DONE ✅"
                         statusMap[task.status] || task.status
                         }\``).join("\n")
                     : "✨ No tasks yet. Use `/task add` to add one!"
