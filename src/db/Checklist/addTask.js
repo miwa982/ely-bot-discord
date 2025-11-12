@@ -5,25 +5,25 @@ import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import { EmbedBuilder } from "discord.js";
 
 const eventList = [
-    { name: "Infinity Abyss", value: `hi3abyss` },
-    { name: "Elysian Realm", value: `hi3er` },
-    { name: "Memorial Arena", value: `hi3ma` },
-    { name: "Spiral Abyss", value: `giabyss` },
-    { name: "Imaginarium Theater", value: `githeater` },
-    { name: "Stygian Onslaught", value: `giso` },
-    { name: "Weekly Bosses - GI", value: `giweeklybosses` },
-    { name: "Memory of Chaos", value: `hsrmoc` },
-    { name: "Pure Fiction", value: `hsrpf` },
-    { name: "Apocalypse Shadow", value: `hsras` },
-    { name: "Simulated/Divergent/Currency", value: `hsrsuducw` },
-    { name: "Weekly Bosses - HSR", value: `hsrweeklybosses` },
+    { name: "HI3 Infinity Abyss", value: `hi3abyss` },
+    { name: "HI3 Elysian Realm", value: `hi3er` },
+    { name: "HI3 Memorial Arena", value: `hi3ma` },
+    { name: "GI Spiral Abyss", value: `giabyss` },
+    { name: "GI Imaginarium Theater", value: `githeater` },
+    { name: "GI Stygian Onslaught", value: `giso` },
+    { name: "GI Weekly Bosses", value: `giweeklybosses` },
+    { name: "GI Memory of Chaos", value: `hsrmoc` },
+    { name: "HSR Pure Fiction", value: `hsrpf` },
+    { name: "HSR Apocalypse Shadow", value: `hsras` },
+    { name: "HSR Simulated/Divergent/Currency", value: `hsrsuducw` },
+    { name: "HSR Weekly Bosses", value: `hsrweeklybosses` },
     { name: "Material Farming", value: `farm` },
 ]
 
 export async function addTask(interaction, client) {
     if (interaction.options.getSubcommand() !== "add") return;
     const taskName = interaction.options.getString("name");
-    const type = interaction.options.getString("type");
+    const type = interaction.options.getString("type") ?? 'daily';
     const tag = interaction.user.tag;
     const { start, end } = type === 'daily' ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
@@ -68,7 +68,7 @@ export async function addTask(interaction, client) {
         const embed = new EmbedBuilder()
             .setTitle(checklist.title)
             .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
-            .setThumbnail("https://i.redd.it/wqiml59f50ob1.jpg")
+
             .setColor(0xec82b0)
             .setDescription(
                 slice && slice.length > 0 ?

@@ -4,7 +4,7 @@ import { getFormatedTodayDate, getFormattedWeekRangeUTC7, getTodayRangeUTC, getW
 export async function createChecklist(interaction, client) {
     const tag = interaction.user.tag;
     const [type, is_reset, is_reset_status] = [
-        interaction.options.getString("type"),
+        interaction.options.getString("type") ?? 'daily',
         interaction.options.getString("is_reset"),
         interaction.options.getString("is_reset_status"),
     ]
@@ -12,9 +12,13 @@ export async function createChecklist(interaction, client) {
 
     // Check if today's checklist already exists
     const existing = await ChecklistSchema.findOne({
-        type: type,
         ownerName: tag,
-        createdAt: { $gte: start, $lte: end }
+        createdAt: { $gte: start, $lte: end },
+        $or: [
+            { type: type },
+            { type: { $exists: false } },
+            { type: null } 
+        ]
     });
     
     if (existing) {

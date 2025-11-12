@@ -61,7 +61,7 @@ export async function editTask(interaction, client) {
         const embed = new EmbedBuilder()
             .setTitle(checklist.title)
             .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
-            .setThumbnail("https://i.redd.it/wqiml59f50ob1.jpg")
+
             .setColor(0xec82b0)
             .setDescription(
                 slice && slice.length > 0 ?

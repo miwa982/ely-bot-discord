@@ -21,7 +21,7 @@ const checkListTypeEnum = {
 
 async function sendTasksChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type");
+    const type = interaction.options.getString("type") ?? 'daily';
     const isReset = interaction.options.getString("is_reset");
     const isResetStatus = interaction.options.getString("is_reset_status");
     const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
@@ -30,7 +30,11 @@ async function sendTasksChecklist(interaction, client) {
     const checklist = await ChecklistSchema.findOne({
         ownerName: tag,
         createdAt: { $gte: start, $lte: end },
-        type: type,
+        $or: [
+            { type: type },
+            { type: { $exists: false } },
+            { type: null }
+        ]
         // isReset: isReset === 'true' ? true : false,
         // isResetStatus: isResetStatus === 'true' ? true : false
     }).populate("items");
@@ -68,7 +72,7 @@ async function sendTasksChecklist(interaction, client) {
         const embed = new EmbedBuilder()
             .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
             .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
-            .setThumbnail("https://i.redd.it/wqiml59f50ob1.jpg")
+
             .setColor(0xec82b0)
             .setDescription(
                 slice && slice.length > 0 ?
