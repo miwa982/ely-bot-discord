@@ -7,6 +7,7 @@ import { createChecklist } from "../db/Checklist/createChecklist.js";
 import ChecklistSchema from "../db/Checklist/checklistSchema.js";
 import { getTodayRangeUTC, getWeekRangeUTC } from "../utils/date.js";
 import { removeChecklist } from "../db/Checklist/removeChecklist.js";
+import { editChecklist } from "../db/Checklist/editChecklist.js";
 import TaskStatusType from "../enum/TaskStatusType.js";
 
 const commandInfo = {
@@ -22,11 +23,10 @@ const checkListTypeEnum = {
 async function sendTasksChecklist(interaction, client) {
     const tag = interaction.user.tag;
     const type = interaction.options.getString("type") ?? 'daily';
-    const isReset = interaction.options.getString("is_reset");
-    const isResetStatus = interaction.options.getString("is_reset_status");
+    const isReset = interaction.options.getString("is_reset") ?? 'false';
+    const isResetStatus = interaction.options.getString("is_reset_status") ?? 'true';
     const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
-    
     const checklist = await ChecklistSchema.findOne({
         ownerName: tag,
         createdAt: { $gte: start, $lte: end },
@@ -34,9 +34,9 @@ async function sendTasksChecklist(interaction, client) {
             { type: type },
             { type: { $exists: false } },
             { type: null }
-        ]
-        // isReset: isReset === 'true' ? true : false,
-        // isResetStatus: isResetStatus === 'true' ? true : false
+        ],
+        isReset: isReset === 'true' ? true : false,
+        isResetStatus: isResetStatus === 'true' ? true : false
     }).populate("items");
 
     if (!checklist) {
@@ -124,15 +124,15 @@ export default {
             subcommand => subcommand
                 .setName(`view`)
                 .setDescription(`Show today's checklist (auto-adjusted by weekday)`)
-        .addStringOption(option =>
-            option.setName("type")
-                .setDescription("Checklist type default by daily (e.g. daily, weekly)")
-                .setRequired(false)
-                .addChoices(
-                    { name: "DAILY", value: "daily" },
-                    { name: "WEEKLY", value: "weekly" },
-                )
-        ))
+                .addStringOption(option =>
+                    option.setName("type")
+                        .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+                        .setRequired(false)
+                        .addChoices(
+                            { name: "DAILY", value: "daily" },
+                            { name: "WEEKLY", value: "weekly" },
+                        )
+                ))
         .addSubcommand(subcommand => subcommand
             .setName("create")
             .setDescription("Create a new checklist (e.g. weekly, daily, event-based).")
@@ -187,11 +187,45 @@ export default {
                         { name: "DAILY", value: "daily" },
                         { name: "WEEKLY", value: "weekly" },
                     ))
+        ).addSubcommand(sub =>
+            sub
+                .setName("edit")
+                .setDescription("Edit your existing checklist")
+                .addStringOption(option =>
+                    option.setName("title")
+                        .setDescription("New title for the checklist")
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName("description")
+                        .setDescription("New description for the checklist")
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName("is_reset")
+                        .setDescription("Reset checklist daily/weekly")
+                        .addChoices(
+                            { name: 'true', value: 'true' }, 
+                            { name: 'false', value: 'false' })
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName("is_reset_status")
+                        .setDescription("Reset task statuses")
+                        .addChoices(
+                            { name: 'true', value: 'true' }, 
+                            { name: 'false', value: 'false' })
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName("type")
+                        .setDescription("Checklist type (daily/weekly)")
+                        .addChoices(
+                            { name: 'DAILY', value: 'daily' }, 
+                            { name: 'WEEKLY', value: 'weekly' })
+                        .setRequired(false))
         ),
     run: async ({ interaction, client }) => {
         const subcommand = interaction.options.getSubcommand();
         if (subcommand === "view") return sendTasksChecklist(interaction, client);
         if (subcommand === "create") return createChecklist(interaction, client);
+        if (subcommand === "edit") return editChecklist(interaction, client);
         if (subcommand === "remove") return removeChecklist(interaction, client);
     }
 };

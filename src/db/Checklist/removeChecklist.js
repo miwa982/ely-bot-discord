@@ -3,7 +3,7 @@ import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 
 export async function removeChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type");
+    const type = interaction.options.getString("type") ?? 'daily';
     const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     // Find checklist for today

@@ -5,8 +5,8 @@ export async function createChecklist(interaction, client) {
     const tag = interaction.user.tag;
     const [type, is_reset, is_reset_status] = [
         interaction.options.getString("type") ?? 'daily',
-        interaction.options.getString("is_reset"),
-        interaction.options.getString("is_reset_status"),
+        interaction.options.getString("is_reset") ?? 'true',
+        interaction.options.getString("is_reset_status") ?? 'false',
     ]
     const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
@@ -18,7 +18,9 @@ export async function createChecklist(interaction, client) {
             { type: type },
             { type: { $exists: false } },
             { type: null } 
-        ]
+        ],
+        isReset: is_reset === 'true' ? true : false,
+        isResetStatus: is_reset_status === 'true' ? true : false,
     });
     
     if (existing) {

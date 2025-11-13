@@ -6,6 +6,8 @@ let ChecklistSchema = new Schema({
     ownerName: String,
     type: String,
     items: [{ type: Schema.Types.ObjectId, ref: "TaskSchema231202" }],
+    isReset: Boolean,
+    isResetStatus: Boolean,
 
     //For live updates
     lastMessageId: { type: String, default: null },

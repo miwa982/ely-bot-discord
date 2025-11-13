@@ -5,7 +5,7 @@ import TaskStatusType from "../../enum/TaskStatusType.js";
 
 export async function removeTask(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type");
+    const type = interaction.options.getString("type") ?? 'daily';
     const taskNumber = interaction.options.getInteger("task_number");
     const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
