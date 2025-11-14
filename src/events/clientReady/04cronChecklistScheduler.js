@@ -4,7 +4,8 @@ import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import TaskStatusType from "../../enum/TaskStatusType.js";
 
 
-export default (c, client, handler) => {
+export default async (c, client, handler) => {
+    console.log(`checklist scheduler running...`);
     const channel = c.channels.cache.get(process.env.DAILY_CHANNEL_ID);
     // Daily - 23:59 UTC+7
     new CronJob("59 23 * * *", async () => {
@@ -17,6 +18,7 @@ export default (c, client, handler) => {
         for (const checklist of todayChecklists) {
             try {
                 await handleChecklistEndOfPeriod(checklist, "daily");
+                await channel.send(`Daily checklist scheduler next day for ${checklist.title}`);
             } catch (err) {
                 console.error(`❌ Error processing daily checklist ${checklist.title}:`, err);
             }
@@ -34,6 +36,7 @@ export default (c, client, handler) => {
         for (const checklist of lastWeekChecklists) {
             try {
                 await handleChecklistEndOfPeriod(checklist, "weekly");
+                await channel.send(`Weekly checklist scheduler next week for ${checklist.title}`);
             } catch (err) {
                 console.error(`❌ Error processing weekly checklist ${checklist.title}:`, err);
             }

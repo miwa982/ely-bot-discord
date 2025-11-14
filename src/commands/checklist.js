@@ -23,8 +23,8 @@ const checkListTypeEnum = {
 async function sendTasksChecklist(interaction, client) {
     const tag = interaction.user.tag;
     const type = interaction.options.getString("type") ?? 'daily';
-    const isReset = interaction.options.getString("is_reset") ?? 'false';
-    const isResetStatus = interaction.options.getString("is_reset_status") ?? 'true';
+    const isReset = interaction.options.getString("is_reset") ?? 'true';
+    const isResetStatus = interaction.options.getString("is_reset_status") ?? 'false';
     const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     const checklist = await ChecklistSchema.findOne({

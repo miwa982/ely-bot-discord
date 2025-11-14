@@ -28,8 +28,8 @@ export async function editChecklist(interaction, client) {
     // Update fields if provided
     const newTitleInput = interaction.options.getString("title") ?? '';
     const newDescription = interaction.options.getString("description") ?? '';
-    const newIsReset = interaction.options.getString("is_reset") ?? 'false';
-    const newIsResetStatus = interaction.options.getString("is_reset_status") ?? 'true';
+    const newIsReset = interaction.options.getString("is_reset") ?? 'true';
+    const newIsResetStatus = interaction.options.getString("is_reset_status") ?? 'false';
 
     // Helper for generating default title if none is provided
     const getTitleByType = (title, type) => {
