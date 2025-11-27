@@ -35,8 +35,6 @@ async function sendTasksChecklist(interaction, client) {
             { type: { $exists: false } },
             { type: null }
         ],
-        isReset: isReset === 'true' ? true : false,
-        isResetStatus: isResetStatus === 'true' ? true : false
     }).populate("items");
 
     if (!checklist) {
@@ -62,6 +60,12 @@ async function sendTasksChecklist(interaction, client) {
         IN_PROGRESS: "IN PROGRESS... ⌛",
         DONE: "DONE ✅"
     };
+    const chlstStatus = {
+        RESET: '🔄',
+        NOT_RESET: '🚫🔄',
+        RESET_STATUS: '🧹',
+        NOT_RESET_STATUS: '🚫🧹',
+    }
 
     const countDoneTasks = (items) => {
         return items.filter(item => item.status === TaskStatusType.DONE).length;
@@ -76,9 +80,10 @@ async function sendTasksChecklist(interaction, client) {
             .setColor(0xec82b0)
             .setDescription(
                 slice && slice.length > 0 ?
+                    // @ts-ignore
                     slice.map((task, idx) => `**${i + idx + 1}.** ${task.title} — \`${statusMap[task.status] || task.status
                         }\``).join("\n")
-                    : "✨ No tasks yet. Use `/task add` to add one!"
+                    : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
             )
             .setTimestamp();
 
@@ -88,13 +93,16 @@ async function sendTasksChecklist(interaction, client) {
     // ✅ DO NOT reply manually — let pagination handle first reply
     const pagination = new Pagination(interaction, {
         ephemeral: false, // must not be ephemeral
+        // @ts-ignore
         time: 120_000,
     });
 
     const doneCount = countDoneTasks(checklist.items);
     const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
+    const checklistStatusString = `${checklist.isReset ? chlstStatus.RESET : chlstStatus.NOT_RESET} | ${checklist.isResetStatus ? chlstStatus.RESET_STATUS : chlstStatus.NOT_RESET_STATUS}`
     pagination.setEmbeds(pages, (embed, index, array) => {
-        return embed.setFooter({ text: `${progressString}\nPage: ${index + 1}/${array.length}` });
+        return embed.setFooter(
+            { text: `${progressString}\nPage: ${index + 1}/${array.length}\nState: ${checklistStatusString} ` });
     });
 
     try {
@@ -115,117 +123,117 @@ async function sendTasksChecklist(interaction, client) {
     checklist.channelId = sentMessage.channel.id;
     await checklist.save();
 }
-
-export default {
-    data: new SlashCommandBuilder()
-        .setName(commandInfo.name)
-        .setDescription(commandInfo.description)
-        .addSubcommand(
-            subcommand => subcommand
-                .setName(`view`)
-                .setDescription(`Show today's checklist (auto-adjusted by weekday)`)
-                .addStringOption(option =>
-                    option.setName("type")
-                        .setDescription("Checklist type default by daily (e.g. daily, weekly)")
-                        .setRequired(false)
-                        .addChoices(
-                            { name: "DAILY", value: "daily" },
-                            { name: "WEEKLY", value: "weekly" },
-                        )
-                ))
-        .addSubcommand(subcommand => subcommand
-            .setName("create")
-            .setDescription("Create a new checklist (e.g. weekly, daily, event-based).")
-            .addStringOption(option =>
-                option
-                    .setName("title")
-                    .setDescription("Optional title for the checklist")
-                    .setRequired(false)
-            )
-            .addStringOption(option =>
-                option
-                    .setName("description")
-                    .setDescription("Optional description for the checklist")
-                    .setRequired(false)
-            )
-            .addStringOption(option =>
-                option
-                    .setName("type")
-                    .setDescription("Checklist type default by daily (e.g. daily, weekly)")
-                    .setRequired(false)
-                    .addChoices(
-                        { name: "DAILY", value: "daily" },
-                        { name: "WEEKLY", value: "weekly" },
-                    ))
-            .addStringOption(option =>
-                option
-                    .setName("is_reset")
-                    .setDescription("Checklist reset daily/weekly")
-                    .setRequired(false)
-                    .addChoices(
-                        { name: 'true', value: 'true' },
-                        { name: 'false', value: 'false' },
-                    ))
-            .addStringOption(option =>
-                option
-                    .setName("is_reset_status")
-                    .setDescription("Checklist type default by daily (e.g. daily, weekly)")
-                    .setRequired(false)
-                    .addChoices(
-                        { name: 'true', value: 'true' },
-                        { name: 'false', value: 'false' },
-                    ))
-        ).addSubcommand((subcommand) => subcommand
-            .setName("remove")
-            .setDescription("Remove today's checklist.")
-            .addStringOption(option =>
-                option
-                    .setName("type")
-                    .setDescription("Checklist type default by daily (e.g. daily, weekly)")
-                    .setRequired(false)
-                    .addChoices(
-                        { name: "DAILY", value: "daily" },
-                        { name: "WEEKLY", value: "weekly" },
-                    ))
-        ).addSubcommand(sub =>
-            sub
-                .setName("edit")
-                .setDescription("Edit your existing checklist")
-                .addStringOption(option =>
-                    option.setName("title")
-                        .setDescription("New title for the checklist")
-                        .setRequired(false))
-                .addStringOption(option =>
-                    option.setName("description")
-                        .setDescription("New description for the checklist")
-                        .setRequired(false))
-                .addStringOption(option =>
-                    option.setName("is_reset")
-                        .setDescription("Reset checklist daily/weekly")
-                        .addChoices(
-                            { name: 'true', value: 'true' }, 
-                            { name: 'false', value: 'false' })
-                        .setRequired(false))
-                .addStringOption(option =>
-                    option.setName("is_reset_status")
-                        .setDescription("Reset task statuses")
-                        .addChoices(
-                            { name: 'true', value: 'true' }, 
-                            { name: 'false', value: 'false' })
-                        .setRequired(false))
-                .addStringOption(option =>
-                    option.setName("type")
-                        .setDescription("Checklist type (daily/weekly)")
-                        .addChoices(
-                            { name: 'DAILY', value: 'daily' }, 
-                            { name: 'WEEKLY', value: 'weekly' })
-                        .setRequired(false))
-        ),
-    run: async ({ interaction, client }) => {
-        const subcommand = interaction.options.getSubcommand();
-        if (subcommand === "view") return sendTasksChecklist(interaction, client);
-        if (subcommand === "create") return createChecklist(interaction, client);
-        if (subcommand === "edit") return editChecklist(interaction, client);
-        if (subcommand === "remove") return removeChecklist(interaction, client);
-    }
-};
+//legacy
+// export default {
+//     data: new SlashCommandBuilder()
+//         .setName(commandInfo.name)
+//         .setDescription(commandInfo.description)
+//         .addSubcommand(
+//             subcommand => subcommand
+//                 .setName(`view`)
+//                 .setDescription(`Show today's checklist (auto-adjusted by weekday)`)
+//                 .addStringOption(option =>
+//                     option.setName("type")
+//                         .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+//                         .setRequired(false)
+//                         .addChoices(
+//                             { name: "DAILY", value: "daily" },
+//                             { name: "WEEKLY", value: "weekly" },
+//                         )
+//                 ))
+//         .addSubcommand(subcommand => subcommand
+//             .setName("create")
+//             .setDescription("Create a new checklist (e.g. weekly, daily, event-based).")
+//             .addStringOption(option =>
+//                 option
+//                     .setName("title")
+//                     .setDescription("Optional title for the checklist")
+//                     .setRequired(false)
+//             )
+//             .addStringOption(option =>
+//                 option
+//                     .setName("description")
+//                     .setDescription("Optional description for the checklist")
+//                     .setRequired(false)
+//             )
+//             .addStringOption(option =>
+//                 option
+//                     .setName("type")
+//                     .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+//                     .setRequired(false)
+//                     .addChoices(
+//                         { name: "DAILY", value: "daily" },
+//                         { name: "WEEKLY", value: "weekly" },
+//                     ))
+//             .addStringOption(option =>
+//                 option
+//                     .setName("is_reset")
+//                     .setDescription("Checklist reset daily/weekly")
+//                     .setRequired(false)
+//                     .addChoices(
+//                         { name: 'true', value: 'true' },
+//                         { name: 'false', value: 'false' },
+//                     ))
+//             .addStringOption(option =>
+//                 option
+//                     .setName("is_reset_status")
+//                     .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+//                     .setRequired(false)
+//                     .addChoices(
+//                         { name: 'true', value: 'true' },
+//                         { name: 'false', value: 'false' },
+//                     ))
+//         ).addSubcommand((subcommand) => subcommand
+//             .setName("remove")
+//             .setDescription("Remove today's checklist.")
+//             .addStringOption(option =>
+//                 option
+//                     .setName("type")
+//                     .setDescription("Checklist type default by daily (e.g. daily, weekly)")
+//                     .setRequired(false)
+//                     .addChoices(
+//                         { name: "DAILY", value: "daily" },
+//                         { name: "WEEKLY", value: "weekly" },
+//                     ))
+//         ).addSubcommand(sub =>
+//             sub
+//                 .setName("edit")
+//                 .setDescription("Edit your existing checklist")
+//                 .addStringOption(option =>
+//                     option.setName("title")
+//                         .setDescription("New title for the checklist")
+//                         .setRequired(false))
+//                 .addStringOption(option =>
+//                     option.setName("description")
+//                         .setDescription("New description for the checklist")
+//                         .setRequired(false))
+//                 .addStringOption(option =>
+//                     option.setName("is_reset")
+//                         .setDescription("Reset checklist daily/weekly")
+//                         .addChoices(
+//                             { name: 'true', value: 'true' },
+//                             { name: 'false', value: 'false' })
+//                         .setRequired(false))
+//                 .addStringOption(option =>
+//                     option.setName("is_reset_status")
+//                         .setDescription("Reset task statuses")
+//                         .addChoices(
+//                             { name: 'true', value: 'true' },
+//                             { name: 'false', value: 'false' })
+//                         .setRequired(false))
+//                 .addStringOption(option =>
+//                     option.setName("type")
+//                         .setDescription("Checklist type (daily/weekly)")
+//                         .addChoices(
+//                             { name: 'DAILY', value: 'daily' },
+//                             { name: 'WEEKLY', value: 'weekly' })
+//                         .setRequired(false))
+//         ),
+//     run: async ({ interaction, client }) => {
+//         const subcommand = interaction.options.getSubcommand();
+//         if (subcommand === "view") return sendTasksChecklist(interaction, client);
+//         if (subcommand === "create") return createChecklist(interaction, client);
+//         if (subcommand === "edit") return editChecklist(interaction, client);
+//         if (subcommand === "remove") return removeChecklist(interaction, client);
+//     }
+// };

@@ -56,6 +56,12 @@ export async function addTask(interaction, client) {
         IN_PROGRESS: "IN PROGRESS... ⌛",
         DONE: "DONE ✅"
     };
+    const chlstStatus = {
+        RESET: '🔄',
+        NOT_RESET: '🚫🔄',
+        RESET_STATUS: '🧹',
+        NOT_RESET_STATUS: '🚫🧹',
+    }
     const countDoneTasks = (items) => {
         return items.filter(item => item.status === TaskStatusType.DONE).length;
     }
@@ -64,6 +70,7 @@ export async function addTask(interaction, client) {
         const slice = checklist.items.slice(i, i + tasksPerPage);
         const doneCount = countDoneTasks(checklist.items);
         const progressString = `✅ ${doneCount}/${checklist.items.length} completed`;
+        const checklistStatusString = `${checklist.isReset ? chlstStatus.RESET : chlstStatus.NOT_RESET} | ${checklist.isResetStatus ? chlstStatus.RESET_STATUS : chlstStatus.NOT_RESET_STATUS}`
 
         const embed = new EmbedBuilder()
             .setTitle(checklist.title)
@@ -75,11 +82,11 @@ export async function addTask(interaction, client) {
                     slice.map((task, idx) => `**${i + idx + 1}.** ${task.title} — \`${
                         statusMap[task.status] || task.status
                         }\``).join("\n")
-                    : "✨ No tasks yet. Use `/task add` to add one!"
+                    : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
             )
             .setTimestamp()
             .setFooter({
-                text: `${progressString}\nPage: ${Math.floor(i / tasksPerPage) + 1}/${Math.ceil(checklist.items.length / tasksPerPage)}`
+                text: `${progressString}\nPage: ${Math.floor(i / tasksPerPage) + 1}/${Math.ceil(checklist.items.length / tasksPerPage)}\nState: ${checklistStatusString}`
             });
 
 

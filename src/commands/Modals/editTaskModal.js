@@ -1,0 +1,68 @@
+import enumData from '../../enum/enumData.js';
+import {
+    ModalBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    LabelBuilder,
+    TextInputStyle,
+    TextInputBuilder
+} from 'discord.js';
+
+export default {
+    build: async (tasks, type) => {
+
+        const lstStatus = Object.values(enumData.TaskStatusTypeUI).map(status => ({
+            label: status.name,
+            value: status.code
+        }));
+
+        // Convert each task into a Discord option
+        const optionTaskBuilders = tasks.map(task =>
+            new StringSelectMenuOptionBuilder()
+                .setLabel(task.title)
+                .setValue(task._id.toString())
+        );
+
+        const optionStatusBuilders = lstStatus.map(status =>
+            new StringSelectMenuOptionBuilder()
+                .setLabel(status.label)
+                .setValue(status.value)
+        );
+
+        const modal = new ModalBuilder().setCustomId(`edit-task-modal:${type}`)
+            .setTitle('Edit Task')
+
+        const selectTaskMenu = new LabelBuilder()
+            .setLabel('Task list')
+            .setStringSelectMenuComponent(
+                new StringSelectMenuBuilder()
+                    .setCustomId('select-edit-task')
+                    .setPlaceholder('Choose the task')
+                    .addOptions(...optionTaskBuilders)
+                    .setRequired(true)
+            )
+
+        const textInputEditTask = new LabelBuilder()
+            .setLabel('New task name')
+            .setTextInputComponent(
+                new TextInputBuilder()
+                    .setCustomId('input-edit-task')
+                    .setPlaceholder('Rename the task')
+                    .setStyle(TextInputStyle.Short)
+                    .setRequired(false)
+            )
+        const selectStatusMenu = new LabelBuilder()
+            .setLabel('Status')
+            .setStringSelectMenuComponent(
+                new StringSelectMenuBuilder()
+                    .setCustomId('select-edit-task-status')
+                    .setPlaceholder('Choose the status')
+                    .addOptions(...optionStatusBuilders)
+                    .setRequired(true)
+            )
+
+        modal.addLabelComponents([selectTaskMenu, textInputEditTask, selectStatusMenu]);
+
+        return modal;
+    }
+}

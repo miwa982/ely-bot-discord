@@ -1,8 +1,8 @@
 import { CronJob } from 'cron';
 import ChecklistSchema from "../../db/Checklist/checklistSchema.js";
-import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
+import { getFormatedTodayDate, getFormattedWeekRangeUTC7, getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import TaskStatusType from "../../enum/TaskStatusType.js";
-
+import TaskSchema from "../../db/Checklist/taskSchema.js";
 
 export default async (c, client, handler) => {
     console.log(`checklist scheduler running...`);
@@ -45,48 +45,54 @@ export default async (c, client, handler) => {
 
 };
 
-/**
- * Resets task statuses or creates next period checklist as needed
- * @param {Checklist} checklist 
- * @param {"daily"|"weekly"} type 
- */
 async function handleChecklistEndOfPeriod(checklist, type) {
     const ownerName = checklist.ownerName;
 
-    // 🔄 Reset task statuses if isResetStatus is true
     if (checklist.isResetStatus) {
         for (const task of checklist.items) {
             task.status = TaskStatusType.TODO;
             await task.save();
         }
-        console.log(`✅ Reset task statuses for ${ownerName}'s ${type} checklist: ${checklist.title}`);
+
+        console.log(`🧹 Reset task statuses for ${ownerName}'s ${type} checklist: ${checklist.title}`);
     }
 
-    // 🆕 Create next day/week checklist if isReset is false
     if (!checklist.isReset) {
         let newTitle;
 
         if (type === "daily") {
-            // Next day
             const tomorrow = new Date(Date.now() + 86400000);
             newTitle = `Checklist (${getFormatedTodayDate(tomorrow)})`;
         } else {
-            // Weekly - use the CURRENT week range at Monday 00:00
             newTitle = `Checklist (${getFormattedWeekRangeUTC7(0)})`;
         }
 
+        // Create empty checklist first (so we can attach tasks)
         const newChecklist = await ChecklistSchema.create({
             title: newTitle,
             type: checklist.type,
             description: checklist.description,
             ownerName: ownerName,
-            items: checklist.items.map(task => ({
-                title: task.title,
-                status: TaskStatusType.TODO
-            })),
+            items: [],
             isReset: checklist.isReset,
-            isResetStatus: checklist.isResetStatus
+            isResetStatus: checklist.isResetStatus,
+            lastMessageId: null,
+            channelId: null
         });
+
+        const newTasks = await Promise.all(
+            checklist.items.map(async (task) => {
+                return await TaskSchema.create({
+                    checklistId: newChecklist._id,  // attach to new checklist
+                    title: task.title,
+                    status: TaskStatusType.TODO     // ALWAYS reset
+                });
+            })
+        );
+
+        // Attach new tasks to the checklist
+        newChecklist.items = newTasks;
+        await newChecklist.save();
 
         console.log(`📋 Created next ${type} checklist for ${ownerName}: ${newChecklist.title}`);
     }

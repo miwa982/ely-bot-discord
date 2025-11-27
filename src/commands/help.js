@@ -15,18 +15,8 @@ export default {
         {
           name: "📌 Checklist Commands",
           value: [
-            "`/checklist create [title] [description] [type]` → Create a new checklist",
-            "`/checklist view [type]` → Show today's checklist",
-            "`/checklist remove [type]` → Remove today's checklist"
-          ].join("\n"),
-          inline: false
-        },
-        {
-          name: "📝 Task Commands",
-          value: [
-            "`/task add <name> [type]` → Add a new task",
-            "`/task edit <task_number> [title] [status] [type]` → Edit a task",
-            "`/task remove <task_number> [type]` → Remove a task"
+            "`/checklist create [type]` → Create a new checklist",
+            "`/checklist view [type]` → Show today's checklist, interact with buttons to CRUD tasks",
           ].join("\n"),
           inline: false
         },
