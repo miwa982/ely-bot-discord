@@ -40,7 +40,7 @@ export async function viewChecklist(interaction, client) {
 
     const doneCount = countDoneTasks(checklist.items);
     const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-    const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET.icon : enumData.ChecklistStatus.NOT_RESET.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STAUTS.icon : enumData.ChecklistStatus.NOT_RESET_STATUS.icon}`
+    const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET?.icon : enumData.ChecklistStatus.NOT_RESET?.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STAUTS?.icon : enumData.ChecklistStatus.NOT_RESET_STATUS?.icon}`
 
     const embed = new EmbedBuilder()
         .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)

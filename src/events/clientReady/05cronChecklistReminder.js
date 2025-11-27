@@ -4,7 +4,6 @@ import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import TaskStatusType from "../../enum/TaskStatusType.js";
 
 export default (c, client, handler) => {
-    console.log(`checklist reminder running...`);
     // 🕕 Daily task reminder at 18:00 UTC+7
     new CronJob("0 18 * * *", async () => {
         const { start, end } = getTodayRangeUTC(7); // today's range in UTC+7
@@ -15,13 +14,15 @@ export default (c, client, handler) => {
 
         for (const checklist of todayChecklists) {
             // Filter incomplete tasks
+            // @ts-ignore
             const pendingTasks = checklist.items.filter(task => task.status !== TaskStatusType.DONE);
 
             if (pendingTasks.length === 0) continue; // nothing to remind
 
             // Format the reminder message
+            // @ts-ignore
             const taskList = pendingTasks.map((task, idx) => `${idx + 1}. ${task.title}`).join("\n");
-            const message = `⏰ <@${checklist.ownerName}> Reminder for your daily checklist:\n${taskList}`;
+            const message = `⏰ < @${checklist.ownerName} > Reminder for your daily checklist:\n${taskList}`;
 
             try {
                 // Fetch the channel from the last message or default daily channel
@@ -39,7 +40,7 @@ export default (c, client, handler) => {
                 if (channel) await channel.send(message);
             }
         }
-    });
+    }, null, true, "Asia/Bangkok");
 
     // 🕕 Weekly task reminder at Sunday 18:00 UTC+7
     new CronJob("0 18 * * 0", async () => { // Sunday = 0
@@ -53,11 +54,13 @@ export default (c, client, handler) => {
         }).populate("items");
 
         for (const checklist of weeklyChecklists) {
+            // @ts-ignore
             const pendingTasks = checklist.items.filter(task => task.status !== TaskStatusType.DONE);
             if (pendingTasks.length === 0) continue; // skip if all done
 
+            // @ts-ignore
             const taskList = pendingTasks.map((task, idx) => `${idx + 1}. ${task.title}`).join("\n");
-            const message = `⏰ <@${checklist.ownerName}> Reminder for your daily checklist:\n${taskList}`;
+            const message = `⏰ < @${checklist.ownerName} > Reminder for your weekly checklist:\n${taskList}`;
 
             try {
                 const channel = checklist.channelId
@@ -74,5 +77,5 @@ export default (c, client, handler) => {
                 if (channel) await channel.send(message);
             }
         }
-    });
+    }, null, true, "Asia/Bangkok");
 }
