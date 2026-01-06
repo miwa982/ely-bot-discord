@@ -42,8 +42,8 @@ export default (c, client, handler) => {
         }
     }, null, true, "Asia/Bangkok");
 
-    // 🕕 Weekly task reminder at Sunday 18:00 UTC+7
-    new CronJob("0 18 * * 0", async () => { // Sunday = 0
+    // 🕕 Weekly task reminder every day at 18:00 UTC+7
+    new CronJob("0 18 * * *", async () => {
         console.log("⏰ Running weekly task reminder...");
 
         // Fetch CURRENT week checklists (Sunday still belongs to current week)
