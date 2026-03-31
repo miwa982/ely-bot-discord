@@ -22,87 +22,91 @@ const checkListTypeEnum = {
 
 async function sendTasksChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type") ?? 'daily';
-    const isReset = interaction.options.getString("is_reset") ?? 'true';
-    const isResetStatus = interaction.options.getString("is_reset_status") ?? 'false';
-    const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+    const type = interaction.options.getString("type") ?? "daily";
+    const { start, end } =
+      !type || type === "daily" ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     const checklist = await ChecklistSchema.findOne({
-        ownerName: tag,
-        createdAt: { $gte: start, $lte: end },
-        $or: [
-            { type: type },
-            { type: { $exists: false } },
-            { type: null }
-        ],
+      ownerName: tag,
+      createdAt: { $gte: start, $lte: end },
+      $or: [{ type: type }, { type: { $exists: false } }, { type: null }],
     }).populate("items");
 
     if (!checklist) {
-        if (!type || type === checkListTypeEnum.DAILY.code) {
-            return interaction.reply({
-                content: `❌ No checklist found for today. Use \`/checklist create\` first.`,
-                ephemeral: true
-            });
-        }
+      if (!type || type === checkListTypeEnum.DAILY.code) {
+        return interaction.reply({
+          content: `❌ No checklist found for today. Use \`/checklist create\` first.`,
+          ephemeral: true,
+        });
+      }
 
-        if (type === checkListTypeEnum.WEEKLY.code) {
-            return interaction.reply({
-                content: `❌ No checklist found for this week. Use \`/checklist create type:WEEKLY\` first.`,
-                ephemeral: true
-            });
-        }
+      if (type === checkListTypeEnum.WEEKLY.code) {
+        return interaction.reply({
+          content: `❌ No checklist found for this week. Use \`/checklist create type:WEEKLY\` first.`,
+          ephemeral: true,
+        });
+      }
     }
 
     const tasksPerPage = 5;
     const pages = [];
     const statusMap = {
-        TODO: "TODO 👀",
-        IN_PROGRESS: "IN PROGRESS... ⌛",
-        DONE: "DONE ✅"
+      TODO: "TODO 👀",
+      IN_PROGRESS: "IN PROGRESS... ⌛",
+      DONE: "DONE ✅",
     };
     const chlstStatus = {
-        RESET: '🔄',
-        NOT_RESET: '🚫🔄',
-        RESET_STATUS: '🧹',
-        NOT_RESET_STATUS: '🚫🧹',
-    }
+      RESET: "🔄",
+      NOT_RESET: "🚫🔄",
+      RESET_STATUS: "🧹",
+      NOT_RESET_STATUS: "🚫🧹",
+    };
 
     const countDoneTasks = (items) => {
-        return items.filter(item => item.status === TaskStatusType.DONE).length;
-    }
+      return items.filter((item) => item.status === TaskStatusType.DONE).length;
+    };
 
     for (let i = 0; i <= checklist.items.length; i += tasksPerPage) {
-        const slice = checklist.items.slice(i, i + tasksPerPage);
-        const embed = new EmbedBuilder()
-            .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
-            .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
+      const slice = checklist.items.slice(i, i + tasksPerPage);
+      const embed = new EmbedBuilder()
+        .setTitle(`${checklist.title} (${checklist.type ?? "daily"})`)
+        .setAuthor({
+          name: interaction.user.tag,
+          iconURL: interaction.user.avatarURL(),
+        })
 
-            .setColor(0xec82b0)
-            .setDescription(
-                slice && slice.length > 0 ?
-                    // @ts-ignore
-                    slice.map((task, idx) => `**${i + idx + 1}.** ${task.title} — \`${statusMap[task.status] || task.status
-                        }\``).join("\n")
-                    : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
-            )
-            .setTimestamp();
+        .setColor(0xec82b0)
+        .setDescription(
+          slice && slice.length > 0
+            ? // @ts-ignore
+              slice
+                .map(
+                  (task, idx) =>
+                    `**${i + idx + 1}.** ${task.title} — \`${
+                      statusMap[task.status] || task.status
+                    }\``,
+                )
+                .join("\n")
+            : `✨ No tasks yet. Click **"📋 Add"** button to add one!`,
+        )
+        .setTimestamp();
 
-        pages.push(embed);
+      pages.push(embed);
     }
 
     // ✅ DO NOT reply manually — let pagination handle first reply
     const pagination = new Pagination(interaction, {
-        ephemeral: false, // must not be ephemeral
-        // @ts-ignore
-        time: 120_000,
+      ephemeral: false, // must not be ephemeral
+      // @ts-ignore
+      time: 120_000,
     });
 
     const doneCount = countDoneTasks(checklist.items);
-    const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-    const checklistStatusString = `${checklist.isReset ? chlstStatus.RESET : chlstStatus.NOT_RESET} | ${checklist.isResetStatus ? chlstStatus.RESET_STATUS : chlstStatus.NOT_RESET_STATUS}`
+    const progressString = `✅ ${doneCount}/${checklist.items.length} completed`;
     pagination.setEmbeds(pages, (embed, index, array) => {
-        return embed.setFooter(
-            { text: `${progressString}\nPage: ${index + 1}/${array.length}\nState: ${checklistStatusString} ` });
+      return embed.setFooter({
+        text: `${progressString}\nPage: ${index + 1}/${array.length}`,
+      });
     });
 
     try {

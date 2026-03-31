@@ -47,46 +47,8 @@ export default async (c, client, handler) => {
 };
 
 async function handleChecklistEndOfPeriod(channel, checklist, type) {
-    const ownerName = checklist.ownerName;
+  const ownerName = checklist.ownerName;
 
-    if (!checklist.isReset) {
-        let newTitle;
-
-        if (type === "daily") {
-            const tomorrow = new Date(Date.now() + 86400000);
-            newTitle = `Checklist (${getFormatedTodayDate(1)})`;
-        } else {
-            newTitle = `Checklist (${getFormattedWeekRangeUTC7(0)})`;
-        }
-
-        // Create empty checklist first (so we can attach tasks)
-        const newChecklist = await ChecklistSchema.create({
-            title: newTitle,
-            type: checklist.type,
-            description: checklist.description,
-            ownerName: ownerName,
-            items: [],
-            isReset: checklist.isReset,
-            isResetStatus: checklist.isResetStatus,
-            lastMessageId: null,
-            channelId: null
-        });
-
-        const newTasks = await Promise.all(
-            checklist.items.map(async (task) => {
-                return await TaskSchema.create({
-                    checklistId: newChecklist._id,  // attach to new checklist
-                    title: task.title,
-                    status: checklist.isResetStatus ? enumData.TaskStatusType.TODO.code : task.status
-                });
-            })
-        );
-        
-        // Attach new tasks to the checklist
-        newChecklist.items = newTasks;
-        await newChecklist.save();
-        
-        checklist.isResetStatus ? await channel.send(`🧹 Reset task statuses for ${ownerName}'s ${type} checklist: ${checklist.title}`) : ''
-        await channel.send(`📋 Created next ${type} checklist for ${ownerName}: ${newChecklist.title}`);
-    }
+  // Removed logic for creating next period checklists and copying unfinished tasks
+  // Checklists will not be automatically carried over to the next day/week
 }

@@ -27,22 +27,22 @@ export async function editChecklist(interaction, client) {
 
     // Update fields if provided
     const newTitleInput = interaction.options.getString("title") ?? '';
-    const newDescription = interaction.options.getString("description") ?? '';
-    const newIsReset = interaction.options.getString("is_reset") ?? 'true';
-    const newIsResetStatus = interaction.options.getString("is_reset_status") ?? 'false';
+    const newDescription = interaction.options.getString("description") ?? "";
 
     // Helper for generating default title if none is provided
     const getTitleByType = (title, type) => {
-        if (!type || type === 'daily') {
-            return title ? `${title} (${getFormatedTodayDate()})` : `Checklist (${getFormatedTodayDate()})`;
-        }
-        return title ? `${title} (${getFormattedWeekRangeUTC7()})` : `Checklist (${getFormattedWeekRangeUTC7()})`;
-    }
+      if (!type || type === "daily") {
+        return title
+          ? `${title} (${getFormatedTodayDate()})`
+          : `Checklist (${getFormatedTodayDate()})`;
+      }
+      return title
+        ? `${title} (${getFormattedWeekRangeUTC7()})`
+        : `Checklist (${getFormattedWeekRangeUTC7()})`;
+    };
 
     checklist.title = getTitleByType(newTitleInput, type);
     checklist.description = newDescription;
-    checklist.isReset = newIsReset === 'true';
-    checklist.isResetStatus = newIsResetStatus === 'true';
 
     await checklist.save();
 

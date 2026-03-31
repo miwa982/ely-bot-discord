@@ -39,22 +39,29 @@ export async function viewChecklist(interaction, client) {
     }
 
     const doneCount = countDoneTasks(checklist.items);
-    const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-    const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET?.icon : enumData.ChecklistStatus.NOT_RESET?.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STAUTS?.icon : enumData.ChecklistStatus.NOT_RESET_STATUS?.icon}`
+    const progressString = `✅ ${doneCount}/${checklist.items.length} completed`;
 
     const embed = new EmbedBuilder()
-        .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
-        .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
+      .setTitle(`${checklist.title} (${checklist.type ?? "daily"})`)
+      .setAuthor({
+        name: interaction.user.tag,
+        iconURL: interaction.user.avatarURL(),
+      })
 
-        .setColor(0xec82b0)
-        .setDescription(
-            checklist.items && checklist.items.length > 0 ?
-                // @ts-ignore
-                checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status].name}\``).join("\n")
-                : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
-        )
-        .setFooter({ text: `${progressString}\n${checklistStatusString}` })
-        .setTimestamp();
+      .setColor(0xec82b0)
+      .setDescription(
+        checklist.items && checklist.items.length > 0
+          ? // @ts-ignore
+            checklist.items
+              .map(
+                (task, idx) =>
+                  `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status].name}\``,
+              )
+              .join("\n")
+          : `✨ No tasks yet. Click **"📋 Add"** button to add one!`,
+      )
+      .setFooter({ text: `${progressString}` })
+      .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()

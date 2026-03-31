@@ -65,7 +65,6 @@ export default async (interaction, client) => {
                         // Rebuild embed 
                         const doneCount = countDoneTasks(checklist.items);
                         const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-                        const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET.icon : enumData.ChecklistStatus.NOT_RESET.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STATUS.icon : enumData.ChecklistStatus.NOT_RESET_STATUS.icon}`
 
                         const embed = new EmbedBuilder()
                             .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
@@ -78,7 +77,7 @@ export default async (interaction, client) => {
                                     checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status]?.name}\``).join("\n")
                                     : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
                             )
-                            .setFooter({ text: `${progressString}\n${checklistStatusString}` })
+                            .setFooter({ text: `${progressString}` })
                             .setTimestamp();
 
                         // Update old checklist message if it exists
@@ -137,7 +136,6 @@ export default async (interaction, client) => {
 
                         const doneCount = countDoneTasks(checklist.items);
                         const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-                        const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET.icon : enumData.ChecklistStatus.NOT_RESET.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STATUS.icon : enumData.ChecklistStatus.NOT_RESET_STATUS.icon}`
 
                         const embed = new EmbedBuilder()
                             .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
@@ -149,7 +147,7 @@ export default async (interaction, client) => {
                                     checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status]?.name}\``).join("\n")
                                     : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
                             )
-                            .setFooter({ text: `${progressString}\n${checklistStatusString}` })
+                            .setFooter({ text: `${progressString}` })
                             .setTimestamp();
 
                         // Update old checklist message if it exists
@@ -209,7 +207,6 @@ export default async (interaction, client) => {
 
                         const doneCount = countDoneTasks(checklist.items);
                         const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-                        const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET.icon : enumData.ChecklistStatus.NOT_RESET.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STATUS.icon : enumData.ChecklistStatus.NOT_RESET_STATUS.icon}`
 
                         const embed = new EmbedBuilder()
                             .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
@@ -221,7 +218,7 @@ export default async (interaction, client) => {
                                     checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status]?.name}\``).join("\n")
                                     : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
                             )
-                            .setFooter({ text: `${progressString}\n${checklistStatusString}` })
+                            .setFooter({ text: `${progressString}` })
                             .setTimestamp();
 
                         // Update old checklist message if it exists
@@ -272,17 +269,11 @@ export default async (interaction, client) => {
                                 flags: 64
                             });
                         }
-                        if (selectedStatusCode === enumData.ChecklistStatus.RESET.value || selectedStatusCode === enumData.ChecklistStatus.NOT_RESET.value) {
-                            checklist.isReset = enumData.ChecklistStatus.RESET.value === selectedStatusCode ? true : false
-                        }
-                        if (selectedStatusCode === enumData.ChecklistStatus.RESET_STATUS.value || selectedStatusCode === enumData.ChecklistStatus.NOT_RESET_STATUS.value) {
-                            checklist.isResetStatus = enumData.ChecklistStatus.RESET_STATUS.value === selectedStatusCode ? true : false
-                        }
+                        // Removed logic for setting reset statuses
                         await checklist.save()
 
                         const doneCount = countDoneTasks(checklist.items);
                         const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
-                        const checklistStatusString = `${checklist.isReset ? enumData.ChecklistStatus.RESET.icon : enumData.ChecklistStatus.NOT_RESET.icon} | ${checklist.isResetStatus ? enumData.ChecklistStatus.RESET_STATUS.icon : enumData.ChecklistStatus.NOT_RESET_STATUS.icon}`
 
                         const embed = new EmbedBuilder()
                             .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
@@ -294,7 +285,7 @@ export default async (interaction, client) => {
                                     checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status]?.name}\``).join("\n")
                                     : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
                             )
-                            .setFooter({ text: `${progressString}\n${checklistStatusString}` })
+                            .setFooter({ text: `${progressString}` })
                             .setTimestamp();
 
                         // Update old checklist message if it exists
