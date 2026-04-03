@@ -13,7 +13,7 @@ export default async (c, client, handler) => {
       console.log("📅 Creating daily checklists for all users...");
 
       const guildId = process.env.GUILD_ID
-        ? JSON.parse(process.env.GUILD_ID)[0]
+        ? JSON.parse(process.env.GUILD_ID)[1]
         : null;
       if (!guildId) {
         console.error("❌ GUILD_ID not set in environment variables");
@@ -63,6 +63,7 @@ export default async (c, client, handler) => {
             type: "daily",
             description: "Auto-generated daily checklist",
             ownerName: tag,
+            ownerId: member.id,
             items: [],
             channelId: channel.id, // Store channel ID for reminders
           });

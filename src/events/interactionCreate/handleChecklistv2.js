@@ -247,74 +247,72 @@ export default async (interaction, client) => {
                         });
                         break;
                     }
-                case `setting-checklist-modal:${type}`:
-                    {
-                        const selectedStatusCode = interaction.fields.getStringSelectValues('select-checklist-status')[0];
+                // case `setting-checklist-modal:${type}`:
+                //     {
+                //         const tag = interaction.user.tag;
+                //         const type = interaction.customId.split(":")[1];
+                //         const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
-                        const tag = interaction.user.tag;
-                        const type = interaction.customId.split(":")[1];
-                        const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+                //         // Find the checklist for today/week
+                //         const checklist = await ChecklistSchema.findOne({
+                //             ownerName: tag,
+                //             type: type ?? 'daily',
+                //             createdAt: { $gte: start, $lte: end }
+                //         }).populate("items");
 
-                        // Find the checklist for today/week
-                        const checklist = await ChecklistSchema.findOne({
-                            ownerName: tag,
-                            type: type ?? 'daily',
-                            createdAt: { $gte: start, $lte: end }
-                        }).populate("items");
+                //         if (!checklist) {
+                //             const messageCon = type === 'daily' ? 'today' : 'this week';
+                //             return interaction.reply({
+                //                 content: `⚠️ No checklist found for ${messageCon}. Use \`/checklist create\` first.`,
+                //                 flags: 64
+                //             });
+                //         }
+                //         // Removed logic for setting reset statuses
+                //         await checklist.save()
 
-                        if (!checklist) {
-                            const messageCon = type === 'daily' ? 'today' : 'this week';
-                            return interaction.reply({
-                                content: `⚠️ No checklist found for ${messageCon}. Use \`/checklist create\` first.`,
-                                flags: 64
-                            });
-                        }
-                        // Removed logic for setting reset statuses
-                        await checklist.save()
+                //         const doneCount = countDoneTasks(checklist.items);
+                //         const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
 
-                        const doneCount = countDoneTasks(checklist.items);
-                        const progressString = `✅ ${doneCount}/${checklist.items.length} completed`
+                //         const embed = new EmbedBuilder()
+                //             .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
+                //             .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
+                //             .setColor(0xec82b0)
+                //             .setDescription(
+                //                 checklist.items && checklist.items.length > 0 ?
+                //                     // @ts-ignore
+                //                     checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status]?.name}\``).join("\n")
+                //                     : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
+                //             )
+                //             .setFooter({ text: `${progressString}` })
+                //             .setTimestamp();
 
-                        const embed = new EmbedBuilder()
-                            .setTitle(`${checklist.title} (${checklist.type ?? 'daily'})`)
-                            .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
-                            .setColor(0xec82b0)
-                            .setDescription(
-                                checklist.items && checklist.items.length > 0 ?
-                                    // @ts-ignore
-                                    checklist.items.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status]?.name}\``).join("\n")
-                                    : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
-                            )
-                            .setFooter({ text: `${progressString}` })
-                            .setTimestamp();
+                //         // Update old checklist message if it exists
+                //         if (checklist.lastMessageId && checklist.channelId) {
+                //             try {
+                //                 const channel = await client.channels.fetch(interaction.channelId);
+                //                 // Fetch the original message
+                //                 const message = await channel.messages.fetch(checklist.lastMessageId);
 
-                        // Update old checklist message if it exists
-                        if (checklist.lastMessageId && checklist.channelId) {
-                            try {
-                                const channel = await client.channels.fetch(interaction.channelId);
-                                // Fetch the original message
-                                const message = await channel.messages.fetch(checklist.lastMessageId);
+                //                 // Edit only the embeds, keep existing components
+                //                 await message.edit({
+                //                     embeds: [embed],
+                //                     components: message.components // reuse old components
+                //                 });
+                //                 checklist.channelId = channel.id;
+                //                 checklist.lastMessageId = message.id;
+                //                 await checklist.save();
+                //             } catch (err) {
+                //                 console.error("❌ Failed to update old checklist message:", err);
+                //             }
+                //         }
 
-                                // Edit only the embeds, keep existing components
-                                await message.edit({
-                                    embeds: [embed],
-                                    components: message.components // reuse old components
-                                });
-                                checklist.channelId = channel.id;
-                                checklist.lastMessageId = message.id;
-                                await checklist.save();
-                            } catch (err) {
-                                console.error("❌ Failed to update old checklist message:", err);
-                            }
-                        }
+                //         await interaction.reply({
+                //             content: `✅ Checklist status has changed to ${selectedStatusCode}.`,
+                //             flags: 64
+                //         });
+                //         break;
 
-                        await interaction.reply({
-                            content: `✅ Checklist status has changed to ${selectedStatusCode}.`,
-                            flags: 64
-                        });
-                        break;
-
-                    }
+                //     }
                 default:
                     break
             }

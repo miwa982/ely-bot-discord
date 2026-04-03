@@ -5,6 +5,7 @@ let ChecklistSchema = new Schema(
     title: String,
     description: String,
     ownerName: String,
+    ownerId: String,
     type: String,
     items: [{ type: Schema.Types.ObjectId, ref: "TaskSchema231202" }],
 
