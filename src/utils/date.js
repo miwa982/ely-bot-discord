@@ -37,30 +37,27 @@ export const getFormatedTodayDate = (dayOffset = 0) => {
  * @returns {{ start: Date, end: Date }}
  */
 export function getTodayRangeUTC(offset = 7, dayOffset = 0) {
-    const now = new Date(Date.now() + dayOffset * 24 * 60 * 60 * 1000);
+  // 1. Lấy thời điểm hiện tại
+  const now = new Date();
 
-    // Convert to UTC+7
-    const utcOffsetMinutes = offset * 60;
-    const localOffset = now.getTimezoneOffset();
-    const diff = utcOffsetMinutes + localOffset;
+  // 2. Tạo mốc thời gian tại UTC+7 cho ngày cần tính
+  // Chúng ta sử dụng các hàm UTC để tránh bị ảnh hưởng bởi múi giờ của Server
+  const targetDateUTC7 = new Date(
+    now.getTime() + offset * 60 * 60 * 1000 + dayOffset * 24 * 60 * 60 * 1000,
+  );
 
-    const utc7Now = new Date(now.getTime() + diff * 60 * 1000);
+  // 3. Xác định các thành phần YYYY-MM-DD của ngày đó tại múi giờ +7
+  const year = targetDateUTC7.getUTCFullYear();
+  const month = targetDateUTC7.getUTCMonth();
+  const date = targetDateUTC7.getUTCDate();
 
-    // Start of day UTC+7
-    const startOfDay = new Date(utc7Now);
-    startOfDay.setHours(0, 0, 0, 0);
+  // 4. Tạo start và end (theo giờ UTC chuẩn để truy vấn DB)
+  // 00:00:00 UTC+7 tương đương với (00:00:00 - 7h) UTC
+  const start = new Date(Date.UTC(year, month, date, 0 - offset, 0, 0, 0));
+  const end = new Date(Date.UTC(year, month, date, 23 - offset, 59, 59, 999));
 
-    // End of day UTC+7
-    const endOfDay = new Date(utc7Now);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Convert back to UTC for DB queries
-    return {
-        start: new Date(startOfDay.getTime() - diff * 60 * 1000),
-        end: new Date(endOfDay.getTime() - diff * 60 * 1000),
-    };
+  return { start, end };
 }
-
 
 /**
  * Get start and end of a week (in UTC) for a given timezone offset.
