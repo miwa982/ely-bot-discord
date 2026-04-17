@@ -8,7 +8,7 @@ export default async (c, client, handler) => {
 
   // 🕕 Create daily checklists at 06:00 UTC+7
   new CronJob(
-    "0 6 * * *",
+    "0 0 * * *",
     async () => {
       console.log("📅 Creating daily checklists for all users...");
 

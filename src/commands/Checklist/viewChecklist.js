@@ -77,11 +77,6 @@ export async function viewChecklist(interaction, client) {
         new ButtonBuilder()
             .setCustomId(`btn-delete-task:${type}`)
             .setLabel('❌ Delete')
-            .setStyle(ButtonStyle.Secondary),
-
-        new ButtonBuilder()
-            .setCustomId(`btn-setting-checklist:${type}`)
-            .setLabel('⚙️')
             .setStyle(ButtonStyle.Secondary)
     )
 
