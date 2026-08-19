@@ -1,12 +1,12 @@
 import enumData from "../../enum/enumData.js";
-import addTaskModal from "../../commands/Modals/addTaskModal.js";
-import editTaskModal from "../../commands/Modals/editTaskModal.js";
+import addTaskModal from "../../components/Modals/addTaskModal.js";
+import editTaskModal from "../../components/Modals/editTaskModal.js";
 import { BOT_CONFIG, CHECKLIST_TYPES, DISCORD_FLAGS, TASK_STATUS_UI } from "../../constants/bot.js";
 import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import { EmbedBuilder } from "discord.js";
 import ChecklistSchema from "../../db/Checklist/checklistSchema.js";
 import TaskSchema from "../../db/Checklist/taskSchema.js";
-import removeTaskModal from "../../commands/Modals/removeTaskModal.js";
+import removeTaskModal from "../../components/Modals/removeTaskModal.js";
 import daily from "../../commands/daily.js";
 
 const countDoneTasks = (items) => {

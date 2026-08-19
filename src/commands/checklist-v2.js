@@ -2,8 +2,8 @@ import {
     SlashCommandBuilder,
 } from 'discord.js';
 import { CHECKLIST_TYPE_CHOICES } from '../constants/bot.js';
-import { viewChecklist } from './Checklist/viewChecklist.js';
-import { createChecklist } from './Checklist/createChecklist.js';
+import { viewChecklist } from '../features/checklist/viewChecklist.js';
+import { createChecklist } from '../features/checklist/createChecklist.js';
 
 const commandInfo = {
     name: "checklist",

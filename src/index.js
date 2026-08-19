@@ -28,6 +28,30 @@ const client = new Client({
 });
 
 const __filename = fileURLToPath(import.meta.url);
+const requiredEnvVars = ["TOKEN", "DB_URL", "GUILD_ID", "DAILY_CHANNEL_ID"];
+
+function validateEnv() {
+  const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+  if (missingEnvVars.length === 0) return;
+
+  throw new Error(`Missing required environment variable(s): ${missingEnvVars.join(", ")}`);
+}
+
+function logStartupError(error) {
+  const isMongoAuthError =
+    error?.code === 8000 ||
+    error?.codeName === "AtlasError" ||
+    error?.message?.includes("Authentication failed");
+
+  if (isMongoAuthError) {
+    console.error(
+      "❌ MongoDB authentication failed. Check DB_URL username/password, database user permissions, and authSource in the deploy environment.",
+    );
+    return;
+  }
+
+  console.error("❌ Bot startup failed:", error);
+}
 
 new CommandKit({
   client,
@@ -39,10 +63,16 @@ new CommandKit({
 });
 
 (async () => {
-  mongoose.set('strictQuery', false);
-  await mongoose.connect(process.env.DB_URL, { keepAliveInitialDelay: 300000 });
-  console.log("Connected to DB");
-  client.login(process.env.TOKEN);
+  try {
+    validateEnv();
+    mongoose.set('strictQuery', false);
+    await mongoose.connect(process.env.DB_URL, { keepAliveInitialDelay: 300000 });
+    console.log("Connected to DB");
+    await client.login(process.env.TOKEN);
+  } catch (error) {
+    logStartupError(error);
+    process.exit(1);
+  }
 })();
 
 setInterval(async () => {

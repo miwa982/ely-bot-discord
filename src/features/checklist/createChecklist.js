@@ -52,4 +52,3 @@ export async function createChecklist(interaction, client) {
         flags: DISCORD_FLAGS.EPHEMERAL
     });
 }
-
