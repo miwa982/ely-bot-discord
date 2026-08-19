@@ -1,14 +1,16 @@
 import getLocalCommands from "../../utils/getLocalCommands.js";
+import { DISCORD_FLAGS } from "../../constants/bot.js";
 
 
-export default async (client, interaction) => {
-  if (!interaction.isChatInputCommand) return;
+export default async (interaction, client) => {
+  if (!interaction.isChatInputCommand()) return;
 
-  const localCommands = getLocalCommands();
+  const localCommands = await getLocalCommands();
+  const devs = process.env.DEV_ID ? [process.env.DEV_ID] : [];
 
   try {
     const commandObject = localCommands.find(
-      (cmd) => cmd.name === interaction.commandName
+      (cmd) => cmd.data?.name === interaction.commandName || cmd.name === interaction.commandName
     );
 
     if (!commandObject) return;
@@ -17,7 +19,7 @@ export default async (client, interaction) => {
       if (!devs.includes(interaction.member.id)) {
         interaction.reply({
           content: 'Only developers are allowed to run this command.',
-          ephemeral: true,
+          flags: DISCORD_FLAGS.EPHEMERAL,
         });
         return;
       }
@@ -27,7 +29,7 @@ export default async (client, interaction) => {
       if (!(interaction.guild.id === process.env.TEST_GUILD_ID)) {
         interaction.reply({
           content: 'This command cannot be ran here.',
-          ephemeral: true,
+          flags: DISCORD_FLAGS.EPHEMERAL,
         });
         return;
       }
@@ -38,7 +40,7 @@ export default async (client, interaction) => {
         if (!interaction.member.permissions.has(permission)) {
           interaction.reply({
             content: 'Not enough permissions.',
-            ephemeral: true,
+            flags: DISCORD_FLAGS.EPHEMERAL,
           });
           return;
         }
@@ -52,14 +54,17 @@ export default async (client, interaction) => {
         if (!bot.permissions.has(permission)) {
           interaction.reply({
             content: "I don't have enough permissions.",
-            ephemeral: true,
+            flags: DISCORD_FLAGS.EPHEMERAL,
           });
           return;
         }
       }
     }
 
-    await commandObject.callback(client, interaction);
+    const runCommand = commandObject.run ?? commandObject.callback;
+    if (!runCommand) return;
+
+    await runCommand({ client, interaction });
   } catch (error) {
     console.log(`There was an error running this command: ${error}`);
   }

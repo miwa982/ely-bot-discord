@@ -1,58 +1,49 @@
-import { REST, Routes } from 'discord.js';
 import getLocalCommands from '../../utils/getLocalCommands.js';
 import getApplicationCommands from '../../utils/getApplicationCommands.js';
+import areCommandsDifferent from '../../utils/areCommandsDifferent.js';
 
 
 export default async (client) => {
   try {
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-    const localCommands = getLocalCommands();
+    const localCommands = await getLocalCommands();
     const guildIds = process.env.GUILD_ID ? JSON.parse(process.env.GUILD_ID) : [];
 
-    await guildIds.forEach(async (guildId) => {
+    for (const guildId of guildIds) {
       const applicationCommands = await getApplicationCommands(client, guildId);
-      const { name, description, options } = localCommands;
+
       for (const localCommand of localCommands) {
+        const commandData = localCommand.data.toJSON();
         const existingCommand = await applicationCommands.cache.find(
-          (cmd) => cmd.name === name
+          (cmd) => cmd.name === commandData.name
         );
+
         if (existingCommand) {
           if (localCommand.deleted) {
             await applicationCommands.delete(existingCommand.id);
-            console.log(`Deleted command "${name}".`);
+            console.log(`Deleted command "${commandData.name}".`);
             continue;
           }
 
-          if (areCommandDifferent(existingCommand, localCommand)) {
+          if (areCommandsDifferent(existingCommand, commandData)) {
             await applicationCommands.edit(existingCommand.id, {
-              description,
-              options
+              description: commandData.description,
+              options: commandData.options,
             })
-            console.log(`Edited command "${name}".`);
+            console.log(`Edited command "${commandData.name}".`);
           }
         }
         else {
           if (localCommand.deleted) {
-            console.log(`Skipping registering local command "${name}" as it's set to delete.`);
+            console.log(`Skipping registering local command "${commandData.name}" as it's set to delete.`);
             continue;
           }
 
-          await applicationCommands.create({
-            name, description, options
-          });
+          await applicationCommands.create(commandData);
 
-          console.log(`Registered command "${name}".`);
-
-          await rest.put(
-            Routes.applicationGuildCommands(
-              process.env.CLIENT_ID,
-              guildId
-            ),
-            { body: localCommand }
-          );
+          console.log(`Registered command "${commandData.name}".`);
         }
       }
-    })
+    }
 
 
     console.log('Slash commands were registered successfully!');

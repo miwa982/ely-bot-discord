@@ -6,33 +6,14 @@ import {
     TextInputStyle,
     LabelBuilder
 } from 'discord.js';
+import { TASK_SUGGESTIONS } from '../../constants/bot.js';
 
 export default {
     build: async (type) => {
-        //fetch checklist data here
-        const eventList = [
-            { name: "HI3 Infinity Abyss", value: `HI3 Infinity Abyss` },
-            { name: "HI3 Elysian Realm", value: `HI3 Elysian Realm` },
-            { name: "HI3 Memorial Arena", value: `HI3 Memorial Arena` },
-            { name: "GI Spiral Abyss", value: `GI Spiral Abyss` },
-            { name: "GI Imaginarium Theater", value: `GI Imaginarium Theater` },
-            { name: "GI Stygian Onslaught", value: `GI Stygian Onslaught` },
-            { name: "GI Weekly Bosses", value: `GI Weekly Bosses` },
-            { name: "GI Memory of Chaos", value: `GI Memory of Chaos` },
-            { name: "HSR Pure Fiction", value: `HSR Pure Fiction` },
-            { name: "HSR Apocalypse Shadow", value: `HSR Apocalypse Shadow` },
-            { name: "HSR Simulated/Divergent/Currency", value: `HSR Simulated/Divergent/Currency` },
-            { name: "HSR Weekly Bosses", value: `HSR Weekly Bosses` },
-            { name: "Material Farming", value: `Material Farming` },
-        ]
-
-        const tasks = eventList; // ← array of TaskSchema objects
-
-        // Convert each task into a Discord option
-        const optionBuilders = tasks.map(task =>
+        const optionBuilders = TASK_SUGGESTIONS.map(task =>
             new StringSelectMenuOptionBuilder()
                 .setLabel(task.name)
-                .setValue(task.value)
+                .setValue(task.name)
         );
 
         const modal = new ModalBuilder().setCustomId(`add-task-modal:${type}`)

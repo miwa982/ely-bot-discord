@@ -1,12 +1,12 @@
 import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
+import { BOT_CONFIG, CHECKLIST_TYPES, DISCORD_FLAGS, TASK_STATUS_UI, TASK_STATUSES } from "../../constants/bot.js";
 import ChecklistSchema from "../../db/Checklist/checklistSchema.js"
-import enumData from "../../enum/enumData.js"
 
 export async function viewChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type") ?? 'daily';
-    const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+    const type = interaction.options.getString("type") ?? CHECKLIST_TYPES.DAILY;
+    const { start, end } = type === CHECKLIST_TYPES.DAILY ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     const checklist = await ChecklistSchema.findOne({
         ownerName: tag,
@@ -19,43 +19,43 @@ export async function viewChecklist(interaction, client) {
     }).populate("items");
 
     if (!checklist) {
-        if (!type || type === enumData.ChecklistType.DAILY.code) {
+        if (type === CHECKLIST_TYPES.DAILY) {
             return interaction.reply({
                 content: `❌ No checklist found for today. Use \`/checklist create\` first.`,
-                ephemeral: true
+                flags: DISCORD_FLAGS.EPHEMERAL
             });
         }
 
-        if (type === enumData.ChecklistType.WEEKLY.code) {
+        if (type === CHECKLIST_TYPES.WEEKLY) {
             return interaction.reply({
                 content: `❌ No checklist found for this week. Use \`/checklist create type:WEEKLY\` first.`,
-                ephemeral: true
+                flags: DISCORD_FLAGS.EPHEMERAL
             });
         }
     }
 
     const countDoneTasks = (items) => {
-        return items.filter(item => item.status === enumData.TaskStatusType.DONE.code).length;
+        return items.filter(item => item.status === TASK_STATUSES.DONE).length;
     }
 
     const doneCount = countDoneTasks(checklist.items);
     const progressString = `✅ ${doneCount}/${checklist.items.length} completed`;
 
     const embed = new EmbedBuilder()
-      .setTitle(`${checklist.title} (${checklist.type ?? "daily"})`)
+      .setTitle(`${checklist.title} (${checklist.type ?? CHECKLIST_TYPES.DAILY})`)
       .setAuthor({
         name: interaction.user.tag,
         iconURL: interaction.user.avatarURL(),
       })
 
-      .setColor(0xec82b0)
+      .setColor(BOT_CONFIG.EMBED_COLOR)
       .setDescription(
         checklist.items && checklist.items.length > 0
           ? // @ts-ignore
             checklist.items
               .map(
                 (task, idx) =>
-                  `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status].name}\``,
+                  `**${idx + 1}.** ${task.title} — \`${TASK_STATUS_UI[task.status]?.name ?? task.status}\``,
               )
               .join("\n")
           : `✨ No tasks yet. Click **"📋 Add"** button to add one!`,

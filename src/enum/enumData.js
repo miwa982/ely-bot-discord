@@ -1,16 +1,18 @@
+import {
+  CHECKLIST_TYPES,
+  TASK_STATUSES,
+  TASK_STATUS_UI,
+} from "../constants/bot.js";
+
 export default {
   ChecklistType: {
-    DAILY: { name: "DAILY", code: "daily" },
-    WEEKLY: { name: "WEEKLY", code: "weekly" },
+    DAILY: { name: "DAILY", code: CHECKLIST_TYPES.DAILY },
+    WEEKLY: { name: "WEEKLY", code: CHECKLIST_TYPES.WEEKLY },
   },
   TaskStatusType: {
-    TODO: { name: "TODO", code: "TODO" },
-    IN_PROGRESS: { name: "IN_PROGRESS", code: "IN_PROGRESS" },
-    DONE: { name: "DONE", code: "DONE" },
+    TODO: { name: "TODO", code: TASK_STATUSES.TODO },
+    IN_PROGRESS: { name: "IN_PROGRESS", code: TASK_STATUSES.IN_PROGRESS },
+    DONE: { name: "DONE", code: TASK_STATUSES.DONE },
   },
-  TaskStatusTypeUI: {
-    TODO: { name: "TODO 👀", code: "TODO" },
-    IN_PROGRESS: { name: "IN PROGRESS... ⌛", code: "IN_PROGRESS" },
-    DONE: { name: "DONE ✅", code: "DONE" },
-  },
+  TaskStatusTypeUI: TASK_STATUS_UI,
 };

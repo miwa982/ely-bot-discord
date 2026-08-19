@@ -1,13 +1,14 @@
 import ChecklistSchema from "./checklistSchema.js";
+import { BOT_CONFIG, CHECKLIST_TYPES, DISCORD_FLAGS, TASK_STATUS_UI } from "../../constants/bot.js";
 import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import { EmbedBuilder } from "discord.js";
 import TaskStatusType from "../../enum/TaskStatusType.js";
 
 export async function removeTask(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type") ?? 'daily';
+    const type = interaction.options.getString("type") ?? CHECKLIST_TYPES.DAILY;
     const taskNumber = interaction.options.getInteger("task_number");
-    const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+    const { start, end } = type === CHECKLIST_TYPES.DAILY ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     // Find today's checklist
     const checklist = await ChecklistSchema.findOne({
@@ -17,17 +18,17 @@ export async function removeTask(interaction, client) {
     }).populate("items");
 
     if (!checklist) {
-        const messageCon = (!type || type === 'daily') ? 'today' : 'this week';
+        const messageCon = type === CHECKLIST_TYPES.DAILY ? 'today' : 'this week';
         return interaction.reply({
             content: `❌ No checklist found for ${messageCon}.`,
-            ephemeral: true
+            flags: DISCORD_FLAGS.EPHEMERAL
         });
     }
 
     if (taskNumber < 1 || taskNumber > checklist.items.length) {
         return interaction.reply({
             content: `⚠️ Invalid task number. Please choose between 1 and ${checklist.items.length}.`,
-            ephemeral: true
+            flags: DISCORD_FLAGS.EPHEMERAL
         });
     }
 
@@ -44,17 +45,6 @@ export async function removeTask(interaction, client) {
     // Rebuild embeds
     const tasksPerPage = 5;
     const pages = [];
-    const statusMap = {
-        TODO: "TODO 👀",
-        IN_PROGRESS: "IN PROGRESS... ⌛",
-        DONE: "DONE ✅"
-    };
-    const chlstStatus = {
-        RESET: '🔄',
-        NOT_RESET: '🚫🔄',
-        RESET_STATUS: '🧹',
-        NOT_RESET_STATUS: '🚫🧹',
-    }
     const countDoneTasks = (items) => {
         return items.filter(item => item.status === TaskStatusType.DONE).length;
     }
@@ -70,14 +60,14 @@ export async function removeTask(interaction, client) {
             iconURL: interaction.user.avatarURL(),
           })
 
-          .setColor(0xec82b0)
+          .setColor(BOT_CONFIG.EMBED_COLOR)
           .setDescription(
             slice && slice.length > 0
               ? slice
                   .map(
                     (task, idx) =>
                       `**${i + idx + 1}.** ${task.title} — \`${
-                        statusMap[task.status] || task.status
+                        TASK_STATUS_UI[task.status]?.name ?? task.status
                       }\``,
                   )
                   .join("\n")
@@ -93,7 +83,7 @@ export async function removeTask(interaction, client) {
 
     interaction.reply({
         content: `🗑️ Task **${taskNumber}** (${task.title}) has been removed.`,
-        ephemeral: true
+        flags: DISCORD_FLAGS.EPHEMERAL
     });
 
     // if (checklist.lastMessageId && checklist.channelId) {

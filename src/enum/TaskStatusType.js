@@ -1,8 +1,3 @@
-export default {
-    // TODO: "TODO 👀",
-    // IN_PROGRESS: "IN PROGRESS... ⌛",
-    // DONE: "DONE ✅",
-    TODO: "TODO",
-    IN_PROGRESS: "IN_PROGRESS",
-    DONE: "DONE",
-}
+import { TASK_STATUSES } from "../constants/bot.js";
+
+export default TASK_STATUSES;

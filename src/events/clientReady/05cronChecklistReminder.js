@@ -1,9 +1,10 @@
 import { CronJob } from 'cron';
+import { BOT_CONFIG, CHECKLIST_TYPES } from "../../constants/bot.js";
 import ChecklistSchema from "../../db/Checklist/checklistSchema.js";
 import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import TaskStatusType from "../../enum/TaskStatusType.js";
 
-export default (c, client, handler) => {
+export default (client) => {
     // 🕕 Daily task reminder at 18:00 UTC+7
     new CronJob(
       "0 18 * * *",
@@ -11,7 +12,7 @@ export default (c, client, handler) => {
         const { start, end } = getTodayRangeUTC(7); // today's range in UTC+7
         const todayChecklists = await ChecklistSchema.find({
           createdAt: { $gte: start, $lte: end },
-          type: "daily",
+          type: CHECKLIST_TYPES.DAILY,
         }).populate("items");
 
         for (const checklist of todayChecklists) {
@@ -33,23 +34,23 @@ export default (c, client, handler) => {
           try {
             // Fetch the channel from the last message or default daily channel
             const channel = checklist.channelId
-              ? await c.channels.cache.get(checklist.channelId)
-              : c.channels.cache.get(process.env.DAILY_CHANNEL_ID);
+              ? await client.channels.cache.get(checklist.channelId)
+              : client.channels.cache.get(process.env[BOT_CONFIG.DAILY_CHANNEL_ENV]);
 
             if (channel) await channel.send(message);
           } catch (err) {
             const errMsg = `❌ Error sending weekly reminder for checklist ${checklist.title}`;
             console.error(errMsg, err);
             const channel = checklist.channelId
-              ? await c.channels.cache.fetch(checklist.channelId)
-              : c.channels.cache.get(process.env.DAILY_CHANNEL_ID);
+              ? await client.channels.fetch(checklist.channelId)
+              : client.channels.cache.get(process.env[BOT_CONFIG.DAILY_CHANNEL_ENV]);
             if (channel) await channel.send(message);
           }
         }
       },
       null,
       true,
-      "Asia/Bangkok",
+      BOT_CONFIG.DEFAULT_TIMEZONE,
     );
 
     // 🕕 Weekly task reminder every day at 18:00 UTC+7
@@ -62,7 +63,7 @@ export default (c, client, handler) => {
         const { start, end } = getWeekRangeUTC(7, 0);
         const weeklyChecklists = await ChecklistSchema.find({
           createdAt: { $gte: start, $lte: end },
-          type: "weekly",
+          type: CHECKLIST_TYPES.WEEKLY,
         }).populate("items");
 
         for (const checklist of weeklyChecklists) {
@@ -80,22 +81,22 @@ export default (c, client, handler) => {
 
           try {
             const channel = checklist.channelId
-              ? await c.channels.cache.fetch(checklist.channelId)
-              : c.channels.cache.get(process.env.DAILY_CHANNEL_ID);
+              ? await client.channels.fetch(checklist.channelId)
+              : client.channels.cache.get(process.env[BOT_CONFIG.DAILY_CHANNEL_ENV]);
 
             if (channel) await channel.send(message);
           } catch (err) {
             const errMsg = `❌ Error sending weekly reminder for checklist ${checklist.title}`;
             console.error(errMsg, err);
             const channel = checklist.channelId
-              ? await c.channels.cache.fetch(checklist.channelId)
-              : c.channels.cache.get(process.env.DAILY_CHANNEL_ID);
+              ? await client.channels.fetch(checklist.channelId)
+              : client.channels.cache.get(process.env[BOT_CONFIG.DAILY_CHANNEL_ENV]);
             if (channel) await channel.send(message);
           }
         }
       },
       null,
       true,
-      "Asia/Bangkok",
+      BOT_CONFIG.DEFAULT_TIMEZONE,
     );
 }

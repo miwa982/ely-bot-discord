@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { BOT_CONFIG } from "../constants/bot.js";
 import EventSchema from "../db/Event/eventSchema.js";
 
 const DAY_IN_SECONDS = 86_400;
@@ -104,7 +105,7 @@ export async function viewEvent(interaction) {
     const embed = new EmbedBuilder()
         .setTitle("Events")
         .setThumbnail("https://static.wikia.nocookie.net/honkaiimpact3_gamepedia_en/images/c/c5/Miss_Pink_Elf%E2%99%AA_Chibi.png")
-        .setColor(0xec82b0)
+        .setColor(BOT_CONFIG.EMBED_COLOR)
         .setDescription(
             reply && reply.length > 0 ? reply : "✨ No event yet. Use `/event register` to add one!"
         )
@@ -112,5 +113,4 @@ export async function viewEvent(interaction) {
 
     await interaction.channel.send({ embeds: [embed] });
 }
-
 

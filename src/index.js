@@ -40,7 +40,7 @@ new CommandKit({
 
 (async () => {
   mongoose.set('strictQuery', false);
-  await mongoose.connect(process.env.DB_URL, { keepAliveInitialDelay: true });
+  await mongoose.connect(process.env.DB_URL, { keepAliveInitialDelay: 300000 });
   console.log("Connected to DB");
   client.login(process.env.TOKEN);
 })();

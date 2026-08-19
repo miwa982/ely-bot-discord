@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from "discord.js";
+import { DISCORD_FLAGS } from "../constants/bot.js";
 import ReminderSchema from "../db/Reminder/reminderSchema.js";
 
 const commandInfo = {
@@ -41,7 +42,7 @@ export default {
             remindAt = new Date(timeInput.replace(" ", "T") + ":00+07:00");
 
             if (isNaN(remindAt.getTime())) {
-                return interaction.reply({ content: "❌ Invalid time format.", ephemeral: true });
+                return interaction.reply({ content: "❌ Invalid time format.", flags: DISCORD_FLAGS.EPHEMERAL });
             }
         }
 
@@ -55,7 +56,7 @@ export default {
 
         await interaction.reply({
             content: `✅ I will remind you <t:${Math.floor(remindAt.getTime() / 1000)}:R>: "${message}"`,
-            ephemeral: true
+            flags: DISCORD_FLAGS.EPHEMERAL
         });
     }
 };
