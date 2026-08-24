@@ -31,6 +31,23 @@ export const getFormatedTodayDate = (dayOffset = 0) => {
 };
 
 /**
+ * Returns a stable UTC+7 date key for database lookups.
+ * @param {number} dayOffset - 0 = today, 1 = tomorrow, -1 = yesterday
+ * @returns {string} date formatted as YYYY-MM-DD
+ */
+export const getUTC7DateKey = (dayOffset = 0) => {
+    const utc7 = new Date(
+        Date.now() + dayOffset * 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000,
+    );
+
+    return [
+        utc7.getUTCFullYear(),
+        String(utc7.getUTCMonth() + 1).padStart(2, "0"),
+        String(utc7.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+};
+
+/**
  * Returns start and end Date for a day in UTC+7
  * @param {number} offset - UTC offset in hours (e.g., 7)
  * @param {number} dayOffset - 0 = today, 1 = tomorrow, -1 = yesterday
@@ -123,6 +140,5 @@ export function getFormattedWeekRangeUTC7(weekOffset = 0) {
 
   return `${startDM.day}/${startDM.month} - ${endDM.day}/${endDM.month}`;
 }
-
 
 

@@ -6,7 +6,8 @@ import {
     SlashCommandBuilder,
 } from 'discord.js';
 import { BOT_CONFIG, DAILY_GAMES, DISCORD_FLAGS } from '../constants/bot.js';
-import { getFormatedTodayDate } from '../utils/date.js';
+import DailyCheckinMessageSchema from '../db/DailyCheckin/dailyCheckinMessageSchema.js';
+import { getFormatedTodayDate, getUTC7DateKey } from '../utils/date.js';
 import {Elysia} from '../utils/elysia.js';
 
 const commandInfo = {
@@ -155,6 +156,25 @@ function buildDailyComponents(games, completionMap) {
     ];
 }
 
+async function persistDailyMessage(message) {
+    if (!message?.id || !message.channelId) return message;
+
+    try {
+        await DailyCheckinMessageSchema.findOneAndUpdate(
+            { dateKey: getUTC7DateKey(), channelId: message.channelId },
+            {
+                messageId: message.id,
+                guildId: message.guildId ?? null,
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+        );
+    } catch (error) {
+        console.error(`Failed to save daily message ${message.id}:`, error);
+    }
+
+    return message;
+}
+
 async function sendDailyPoll(interaction, channel, client, content = null) {
     if (interaction && !(await deferReplyIfNeeded(interaction))) return null;
 
@@ -169,20 +189,13 @@ async function sendDailyPoll(interaction, channel, client, content = null) {
     if (!payload.content) delete payload.content;
 
     if (interaction) {
-        try {
-            return await interaction.editReply(payload);
-        } catch (error) {
-            if (isUnknownInteractionError(error)) {
-                logUnknownInteraction("editing /daily reply");
-                return null;
-            }
-
-            throw error;
-        }
+        const message = await interaction.editReply(payload);
+        return persistDailyMessage(message);
     }
 
     if (!channel) return;
-    return channel.send(payload);
+    const message = await channel.send(payload);
+    return persistDailyMessage(message);
 }
 
 async function handleDailyButton(interaction, client) {

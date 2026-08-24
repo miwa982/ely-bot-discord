@@ -1,18 +1,32 @@
 import { CronJob } from "cron";
 import { BOT_CONFIG, DAILY_GAMES } from "../../constants/bot.js";
+import DailyCheckinMessageSchema from "../../db/DailyCheckin/dailyCheckinMessageSchema.js";
 import DailyCheckinSubscriptionSchema from "../../db/DailyCheckin/dailyCheckinSubscriptionSchema.js";
-import { getFormatedTodayDate } from "../../utils/date.js";
+import { getUTC7DateKey } from "../../utils/date.js";
 
 const mentionRegex = /<@!?(\d+)>/g;
 
 async function fetchTodayDailyEmbed(channel) {
-  const messages = await channel.messages.fetch({ limit: 50 });
-  const todayTitle = `Daily commission (${getFormatedTodayDate()})`;
+  const dailyMessageRecord = await DailyCheckinMessageSchema.findOne({
+    dateKey: getUTC7DateKey(),
+    channelId: channel.id,
+  });
 
-  // Newest matching message wins. This lets manual /daily replace the cron one.
-  return messages.find((message) =>
-    message.embeds.some((embed) => embed.title === todayTitle),
-  )?.embeds[0];
+  if (!dailyMessageRecord) {
+    console.warn(`No stored daily message found for channel ${channel.id} today.`);
+    return null;
+  }
+
+  try {
+    const message = await channel.messages.fetch(dailyMessageRecord.messageId);
+    return message.embeds[0] ?? null;
+  } catch (error) {
+    console.error(
+      `Failed to fetch daily message ${dailyMessageRecord.messageId}:`,
+      error,
+    );
+    return null;
+  }
 }
 
 function getUncheckedGames(dailyEmbed, userId) {
@@ -48,6 +62,7 @@ export default (client) => {
 
       const subscriptions = await DailyCheckinSubscriptionSchema.find();
       const dailyEmbed = await fetchTodayDailyEmbed(channel);
+      if (!dailyEmbed) return;
 
       for (const subscription of subscriptions) {
         const uncheckedGames = getUncheckedGames(dailyEmbed, subscription.userId);
