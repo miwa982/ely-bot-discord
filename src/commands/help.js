@@ -14,6 +14,16 @@ export default {
       .setColor(BOT_CONFIG.EMBED_COLOR)
       .addFields(
         {
+          name: "🎮 Daily Commission Commands",
+          value: [
+            "`/daily send` → Post today's interactive daily check-in poll",
+            "`/daily check [game] (user)` → Check in a member (or yourself) for a game",
+            "`/daily uncheck [game] (user)` → Remove check-in for a member (or yourself)",
+            "`Right-click User → Apps → Daily Check-in` → Interactive game check-in menu for a member",
+          ].join("\n"),
+          inline: false
+        },
+        {
           name: "📌 Checklist Commands",
           value: [
             "`/checklist create [type]` → Create a new checklist",
@@ -37,6 +47,24 @@ export default {
             "`/birthday view (user)` → View your or a member's birthday countdown",
             "`/birthday list` → List upcoming birthdays in this server",
             "`/birthday remove (user)` → Remove birthday entry",
+          ].join("\n"),
+          inline: false
+        },
+        {
+          name: "🌸 Event & Schedule Commands",
+          value: [
+            "`/event dashboard` → Open interactive event dashboard with presets and manager",
+            "`/event create` → Open modal to create custom weekly/interval/one-time game events",
+            "`/event list` → View active and upcoming game events and timers",
+          ].join("\n"),
+          inline: false
+        },
+        {
+          name: "⚙️ Server Configuration Commands",
+          value: [
+            "`/config set-channel [type] [channel]` → Set notification channel for daily/birthday/event/checklist",
+            "`/config view` → View current channel settings for this server",
+            "`/config reset [type]` → Reset channel assignment back to server default",
           ].join("\n"),
           inline: false
         },

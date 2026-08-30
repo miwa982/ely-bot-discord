@@ -3,6 +3,7 @@ import { BOT_CONFIG, DAILY_GAMES } from "../../constants/bot.js";
 import DailyCheckinMessageSchema from "../../db/DailyCheckin/dailyCheckinMessageSchema.js";
 import DailyCheckinSubscriptionSchema from "../../db/DailyCheckin/dailyCheckinSubscriptionSchema.js";
 import { getUTC7DateKey } from "../../utils/date.js";
+import { resolveGuildChannel } from "../../utils/guildConfig.js";
 
 const mentionRegex = /<@!?(\d+)>/g;
 
@@ -13,7 +14,6 @@ async function fetchTodayDailyEmbed(channel) {
   });
 
   if (!dailyMessageRecord) {
-    console.warn(`No stored daily message found for channel ${channel.id} today.`);
     return null;
   }
 
@@ -57,27 +57,41 @@ export default (client) => {
   new CronJob(
     "0 18 * * *",
     async () => {
-      const channel = await client.channels.fetch(process.env[BOT_CONFIG.DAILY_CHANNEL_ENV]);
-      if (!channel?.isTextBased()) return;
-
+      const guilds = Array.from(client.guilds.cache.values());
       const subscriptions = await DailyCheckinSubscriptionSchema.find();
-      const dailyEmbed = await fetchTodayDailyEmbed(channel);
-      if (!dailyEmbed) return;
+      if (!subscriptions.length) return;
 
-      for (const subscription of subscriptions) {
-        const uncheckedGames = getUncheckedGames(dailyEmbed, subscription.userId);
-        if (uncheckedGames.length === 0) continue;
-
+      for (const guild of guilds) {
         try {
-          await channel.send({
-            content: buildReminderMessage(subscription.userId, uncheckedGames),
-            allowedMentions: { users: [subscription.userId] },
-          });
-        } catch (err) {
-          console.error(
-            `Failed to send daily check-in reminder to ${subscription.userId}:`,
-            err,
+          const channel = await resolveGuildChannel(guild, "daily", client);
+          if (!channel || !channel.isTextBased()) continue;
+
+          const dailyEmbed = await fetchTodayDailyEmbed(channel);
+          if (!dailyEmbed) continue;
+
+          // Find subscriptions that belong to this guild or general subscriptions
+          const guildSubscriptions = subscriptions.filter(
+            (s) => !s.guildId || s.guildId === guild.id,
           );
+
+          for (const subscription of guildSubscriptions) {
+            const uncheckedGames = getUncheckedGames(dailyEmbed, subscription.userId);
+            if (uncheckedGames.length === 0) continue;
+
+            try {
+              await channel.send({
+                content: buildReminderMessage(subscription.userId, uncheckedGames),
+                allowedMentions: { users: [subscription.userId] },
+              });
+            } catch (err) {
+              console.error(
+                `Failed to send daily check-in reminder to ${subscription.userId} in guild ${guild.id}:`,
+                err,
+              );
+            }
+          }
+        } catch (err) {
+          console.error(`Error running daily check-in reminder for guild ${guild.id}:`, err);
         }
       }
     },

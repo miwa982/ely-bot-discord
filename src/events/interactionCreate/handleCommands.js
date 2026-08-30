@@ -3,7 +3,7 @@ import { DISCORD_FLAGS } from "../../constants/bot.js";
 
 
 export default async (interaction, client) => {
-  if (!interaction.isChatInputCommand()) return;
+  if (!interaction.isChatInputCommand() && !interaction.isContextMenuCommand()) return;
 
   const localCommands = await getLocalCommands();
   const devs = process.env.DEV_ID ? [process.env.DEV_ID] : [];

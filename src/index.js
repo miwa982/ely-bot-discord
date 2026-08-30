@@ -28,7 +28,7 @@ const client = new Client({
 });
 
 const __filename = fileURLToPath(import.meta.url);
-const requiredEnvVars = ["TOKEN", "DB_URL", "GUILD_ID", "DAILY_CHANNEL_ID"];
+const requiredEnvVars = ["TOKEN", "DB_URL"];
 
 function validateEnv() {
   const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
@@ -38,10 +38,12 @@ function validateEnv() {
 }
 
 function getGuildIds() {
+  if (!process.env.GUILD_ID) return [];
   try {
-    return process.env.GUILD_ID ? JSON.parse(process.env.GUILD_ID) : [];
+    const parsed = JSON.parse(process.env.GUILD_ID);
+    return Array.isArray(parsed) ? parsed : [parsed];
   } catch (error) {
-    throw new Error("GUILD_ID must be a valid JSON array.");
+    return [process.env.GUILD_ID];
   }
 }
 
@@ -121,81 +123,3 @@ setInterval(async () => {
   }
 }, 30_000); // check every 30 seconds
 
-setInterval(async () => {
-  const now = new Date();
-
-  const events = await EventSchema.find();
-
-  for (const ev of events) {
-    const channel = await client.channels.fetch(ev.channelId);
-    if (!channel) continue;
-
-    // ----------- Reminders -----------
-    const reminders = [
-      // { label: "3days", ms: 3 * 24 * 60 * 60 * 1000 },
-      { label: "1day", ms: 1 * 24 * 60 * 60 * 1000 },
-      { label: "1hour", ms: 1 * 60 * 60 * 1000 },
-    ];
-
-    const rLabel =
-    {
-      "3days": "3 days",
-      "1day": "1 day",
-      "1hour": "1 hour"
-    }
-
-    reminders.forEach(r => {
-      if (
-        ev.endDate - now > 0 &&
-        ev.endDate - now <= r.ms &&
-        !ev[`reminded_${r.label}`] // prevent duplicate send
-      ) {
-        const imageUrl = ev.event_remind ?? Elysia.DEFAULT_REMINDER_IMG;
-        const attachment = new AttachmentBuilder(imageUrl);
-        channel.send({
-          files: [attachment],
-          content: `@everyone \n⏰ Reminder: **${ev.title}** ends in less than ${rLabel[r.label]}! (<t:${Math.floor(ev.endDate.getTime() / 1000)}:F>)`
-
-        }),
-          ev[`reminded_${r.label}`] = true;
-      }
-    });
-
-    //Event start
-    if (!ev.started && Math.abs(ev.startDate - now) < 60 * 1000) {
-      const imageUrl = ev.event_start ?? Elysia.DEFAULT_REMINDER_IMG;
-      const attachment = new AttachmentBuilder(imageUrl);
-      channel.send({
-        files: [attachment],
-        content: `@everyone **${ev.title}** has started!`
-      }),
-      ev.started = true;
-    }
-
-    //Event end
-    if (ev.endDate && ev.started && !ev.ended && Math.abs(ev.endDate - now) < 60 * 1000) {
-      const imageUrl = ev.event_end ?? Elysia.DEFAULT_REMINDER_IMG;
-      const attachment = new AttachmentBuilder(imageUrl);
-      channel.send({
-        files: [attachment],
-        content: `@everyone **${ev.title}** has ended!`
-      }),
-      ev.ended = true;
-
-      // If interval type -> schedule next cycle
-      if (ev.scheduleType === "interval") {
-        ev.startDate = new Date(ev.startDate.getTime() + ev.interval * 24 * 60 * 60 * 1000);
-        ev.endDate = new Date(ev.endDate.getTime() + ev.interval * 24 * 60 * 60 * 1000);
-
-        // Reset flags
-        ev.started = false;
-        ev.ended = false;
-        // ev.reminded_3days = false;
-        ev.reminded_1day = false;
-        ev.reminded_1hour = false;
-      }
-    }
-
-    await ev.save();
-  }
-}, 60_000); // check every 1 min
