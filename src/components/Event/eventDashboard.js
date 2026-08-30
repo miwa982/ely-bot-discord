@@ -13,36 +13,45 @@ export const EVENT_PRESETS = [
   {
     id: "hi3-abyss-1",
     title: "HI3 Superstring Dimension (Mon-Wed)",
-    schedule: "Mon 15:00 - Wed 22:00",
+    schedule: "Mon 14:00 - Wed 21:00",
     reminders: "1d, 2h, 1h, 30m",
     thumbnail: "https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif",
-    description: "Honkai Impact 3rd Superstring Abyss Cycle 1. Finalize your score before 22:00!",
+    description: "Honkai Impact 3rd Superstring Abyss Cycle 1. Finalize your score before 21:00 (9PM UTC+7)!",
   },
   {
     id: "hi3-abyss-2",
     title: "HI3 Superstring Dimension (Fri-Sun)",
-    schedule: "Fri 15:00 - Sun 22:00",
+    schedule: "Fri 14:00 - Sun 21:00",
     reminders: "1d, 2h, 1h, 30m",
     thumbnail: "https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif",
-    description: "Honkai Impact 3rd Superstring Abyss Cycle 2. Finalize your score before 22:00!",
+    description: "Honkai Impact 3rd Superstring Abyss Cycle 2. Finalize your score before 21:00 (9PM UTC+7)!",
   },
   {
     id: "hi3-er",
     title: "HI3 Elysian Realm Weekly",
-    schedule: "Mon 04:00 - Sun 23:59",
+    schedule: "Mon 03:00 - Sun 23:00",
     reminders: "1d, 6h, 2h",
     thumbnail: "https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif",
-    description: "Clear your weekly Deep Sequence runs for full crystal rewards!",
+    description: "Clear your weekly Deep Sequence runs for full crystal rewards before weekly reset!",
+  },
+  {
+    id: "hi3-ma",
+    title: "HI3 Memorial Arena",
+    schedule: "Tue 03:00 - Sun 23:00",
+    reminders: "1d, 6h, 2h",
+    thumbnail: "https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif",
+    description: "Defeat SSS Bosses and lock in your Memorial Arena ranking!",
   },
   {
     id: "hoyo-weekly-reset",
     title: "Hoyoverse Weekly Reset",
-    schedule: "Mon 04:00 - Sun 04:00",
+    schedule: "Mon 03:00 - Sun 03:00",
     reminders: "1d, 2h",
     thumbnail: "https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif",
-    description: "Weekly Bosses, Simulated Universe, and battle pass reset.",
+    description: "Weekly Bosses, Simulated/Divergent Universe, and weekly mission resets (03:00 UTC+7 / 04:00 UTC+8).",
   },
 ];
+
 
 export async function buildEventDashboard(guildId = null) {
   const events = await EventSchema.find(guildId ? { guildId } : {}).sort({ startDate: 1 });
