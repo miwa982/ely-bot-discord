@@ -17,6 +17,47 @@ const commandInfo = {
 
 const DAILY_BUTTON_PREFIX = "daily-toggle";
 const mentionRegex = /<@!?(\d+)>/g;
+const UNKNOWN_INTERACTION_CODE = 10062;
+
+function isUnknownInteractionError(error) {
+    return error?.code === UNKNOWN_INTERACTION_CODE || error?.rawError?.code === UNKNOWN_INTERACTION_CODE;
+}
+
+function logUnknownInteraction(context) {
+    console.warn(`Ignored expired Discord interaction while ${context}.`);
+}
+
+async function deferReplyIfNeeded(interaction) {
+    if (!interaction || interaction.deferred || interaction.replied) return true;
+
+    try {
+        await interaction.deferReply();
+        return true;
+    } catch (error) {
+        if (isUnknownInteractionError(error)) {
+            logUnknownInteraction("deferring /daily");
+            return false;
+        }
+
+        throw error;
+    }
+}
+
+async function deferUpdateIfNeeded(interaction) {
+    if (!interaction || interaction.deferred || interaction.replied) return true;
+
+    try {
+        await interaction.deferUpdate();
+        return true;
+    } catch (error) {
+        if (isUnknownInteractionError(error)) {
+            logUnknownInteraction("deferring daily button");
+            return false;
+        }
+
+        throw error;
+    }
+}
 
 async function getDailyGameOptions(client) {
     const games = DAILY_GAMES;
@@ -135,9 +176,7 @@ async function persistDailyMessage(message) {
 }
 
 async function sendDailyPoll(interaction, channel, client, content = null) {
-    if (interaction && !interaction.deferred && !interaction.replied) {
-        await interaction.deferReply();
-    }
+    if (interaction && !(await deferReplyIfNeeded(interaction))) return null;
 
     const games = await getDailyGameOptions(client);
     const completionMap = buildCompletionMap(games);
@@ -164,6 +203,8 @@ async function handleDailyButton(interaction, client) {
         return false;
     }
 
+    if (!(await deferUpdateIfNeeded(interaction))) return true;
+
     const selectedGameCode = interaction.customId.split(":")[1];
     const currentEmbed = interaction.message.embeds[0];
     const games = await getDailyGameOptions(client);
@@ -171,7 +212,7 @@ async function handleDailyButton(interaction, client) {
     const completedUsers = completionMap.get(selectedGameCode);
 
     if (!completedUsers) {
-        await interaction.reply({
+        await interaction.followUp({
             content: "❌ Daily option not found.",
             flags: DISCORD_FLAGS.EPHEMERAL,
         });
@@ -188,7 +229,7 @@ async function handleDailyButton(interaction, client) {
         completionMap.set(selectedGameCode, [...completedUsers, userId]);
     }
 
-    await interaction.update({
+    await interaction.message.edit({
         embeds: [buildDailyEmbed(games, completionMap, currentEmbed?.title)],
         components: buildDailyComponents(games, completionMap),
     });
