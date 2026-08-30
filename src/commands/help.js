@@ -14,6 +14,16 @@ export default {
       .setColor(BOT_CONFIG.EMBED_COLOR)
       .addFields(
         {
+          name: "🎮 Daily Commission Commands",
+          value: [
+            "`/daily send` → Post today's interactive daily check-in poll",
+            "`/daily check [game] (user)` → Check in a member (or yourself) for a game",
+            "`/daily uncheck [game] (user)` → Remove check-in for a member (or yourself)",
+            "`Right-click User → Apps → Daily Check-in` → Interactive game check-in menu for a member",
+          ].join("\n"),
+          inline: false
+        },
+        {
           name: "📌 Checklist Commands",
           value: [
             "`/checklist create [type]` → Create a new checklist",

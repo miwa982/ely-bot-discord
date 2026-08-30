@@ -43,10 +43,14 @@ export default (existingCommand, localCommand) => {
     return false;
   };
 
+  const existingDesc = existingCommand.description || "";
+  const localDesc = localCommand.description || "";
+
   if (
-    existingCommand.description !== localCommand.description ||
-    existingCommand.options?.length !== (localCommand.options?.length || 0) ||
-    areOptionsDifferent(existingCommand.options, localCommand.options || [])
+    existingDesc !== localDesc ||
+    (existingCommand.type && localCommand.type && existingCommand.type !== localCommand.type) ||
+    (existingCommand.options?.length || 0) !== (localCommand.options?.length || 0) ||
+    areOptionsDifferent(existingCommand.options || [], localCommand.options || [])
   ) {
     return true;
   }
