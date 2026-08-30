@@ -31,6 +31,16 @@ export default {
           inline: false
         },
         {
+          name: "🎂 Birthday Commands",
+          value: [
+            "`/birthday set [month] [day] (user)` → Set your birthday (or another member's if admin)",
+            "`/birthday view (user)` → View your or a member's birthday countdown",
+            "`/birthday list` → List upcoming birthdays in this server",
+            "`/birthday remove (user)` → Remove birthday entry",
+          ].join("\n"),
+          inline: false
+        },
+        {
           name: "💡 Tips",
           value: "You can mark tasks as `TODO 👀`, `IN PROGRESS ⌛`, or `DONE ✅`.\n" +
                  "Use `/checklist view [type]` anytime to refresh progress.",

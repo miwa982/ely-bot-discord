@@ -4,6 +4,7 @@ export class Elysia {
     static DEFAULT_REMINDER_IMG = `https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif`;
 
     static daily_response() {
+        
         const responses = [
             "Did you wake early so that you could see me sooner? That makes me happy!",
             "Good morning. A new day starts from a sweet encounter.",
@@ -16,6 +17,11 @@ export class Elysia {
     }
 
     static birthday_response() {
-        return "It's my birthday today. Wanna celebrate together? Just the two of us."
+        return "It's my birthday today. Candles... Of course we'll have 17♪";
     }
-} 
+
+    static member_birthday_response() {
+        return "Happy birthday! Look, we've spent another year together.";
+    }
+}
+ 
