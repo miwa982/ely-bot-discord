@@ -3,6 +3,7 @@ import { EmbedBuilder } from "discord.js";
 import { BOT_CONFIG } from "../../constants/bot.js";
 import BirthdaySchema from "../../db/Birthday/birthdaySchema.js";
 import { Elysia } from "../../utils/elysia.js";
+import { resolveGuildChannel } from "../../utils/guildConfig.js";
 
 const ELYSIA_BOT_ID = "ELYSIA_BOT";
 const ELYSIA_BIRTHDAY_MONTH = 11;
@@ -10,17 +11,8 @@ const ELYSIA_BIRTHDAY_DAY = 11;
 
 export async function checkAndSendBirthdays(client) {
   try {
-    const channelId = process.env[BOT_CONFIG.DAILY_CHANNEL_ENV];
-    if (!channelId) {
-      console.warn("DAILY_CHANNEL_ID not set, skipping birthday check.");
-      return;
-    }
-
-    const channel = await client.channels.fetch(channelId).catch(() => null);
-    if (!channel || !channel.isTextBased()) {
-      console.warn(`Birthday announcement channel (${channelId}) not found or not text-based.`);
-      return;
-    }
+    const guilds = Array.from(client.guilds.cache.values());
+    if (!guilds.length) return;
 
     const now = new Date();
     const utc7 = new Date(now.getTime() + 7 * 60 * 60 * 1000);
@@ -43,10 +35,15 @@ export async function checkAndSendBirthdays(client) {
           .setImage("https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif")
           .setTimestamp();
 
-        await channel.send({
-          content: `@everyone 🎂 Today is Elysia's Birthday!`,
-          embeds: [botEmbed],
-        });
+        for (const guild of guilds) {
+          const channel = await resolveGuildChannel(guild, "birthday", client);
+          if (channel && channel.isTextBased()) {
+            await channel.send({
+              content: `@everyone 🎂 Today is Elysia's Birthday!`,
+              embeds: [botEmbed],
+            }).catch(() => null);
+          }
+        }
 
         await BirthdaySchema.findOneAndUpdate(
           { userId: ELYSIA_BOT_ID },
@@ -88,11 +85,21 @@ export async function checkAndSendBirthdays(client) {
           .setThumbnail("https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif")
           .setTimestamp();
 
-        await channel.send({
-          content: `<@${b.userId}> ${Elysia.member_birthday_response()}`,
-          embeds: [birthdayEmbed],
-          allowedMentions: { users: [b.userId] },
-        });
+        // Determine which guilds to send the wish to
+        const targetGuilds = b.guildId
+          ? [client.guilds.cache.get(b.guildId)].filter(Boolean)
+          : guilds;
+
+        for (const guild of targetGuilds) {
+          const channel = await resolveGuildChannel(guild, "birthday", client);
+          if (channel && channel.isTextBased()) {
+            await channel.send({
+              content: `<@${b.userId}> ${Elysia.member_birthday_response()}`,
+              embeds: [birthdayEmbed],
+              allowedMentions: { users: [b.userId] },
+            });
+          }
+        }
 
         b.lastWishedYear = currentYear;
         await b.save();

@@ -172,33 +172,39 @@ async function persistDailyMessage(message) {
   return message;
 }
 
-export async function getTodayDailyMessage(client, channelId = null) {
-  const targetChannelId = channelId || process.env[BOT_CONFIG.DAILY_CHANNEL_ENV];
+export async function getTodayDailyMessage(client, channelId = null, guildId = null) {
   const dateKey = getUTC7DateKey();
 
   let record = null;
   if (channelId) {
     record = await DailyCheckinMessageSchema.findOne({ dateKey, channelId });
   }
-  if (!record && targetChannelId) {
-    record = await DailyCheckinMessageSchema.findOne({ dateKey, channelId: targetChannelId });
+  if (!record && guildId) {
+    record = await DailyCheckinMessageSchema.findOne({ dateKey, guildId });
   }
   if (!record) {
-    record = await DailyCheckinMessageSchema.findOne({ dateKey });
+    const legacyEnvId = process.env[BOT_CONFIG.DAILY_CHANNEL_ENV];
+    if (legacyEnvId) {
+      record = await DailyCheckinMessageSchema.findOne({ dateKey, channelId: legacyEnvId });
+    }
+  }
+  if (!record) {
+    record = await DailyCheckinMessageSchema.findOne({ dateKey }).sort({ updatedAt: -1 });
   }
 
   if (!record) return null;
 
   try {
-    const channel = await client.channels.fetch(record.channelId);
+    const channel = await client.channels.fetch(record.channelId).catch(() => null);
     if (!channel) return null;
-    const message = await channel.messages.fetch(record.messageId);
+    const message = await channel.messages.fetch(record.messageId).catch(() => null);
     return message;
   } catch (err) {
-    console.error(`Failed to fetch today's daily message ${record.messageId}:`, err);
+    console.error(`Failed to fetch today's daily message ${record?.messageId}:`, err);
     return null;
   }
 }
+
 
 export async function modifyUserCheckin({
   client,

@@ -28,7 +28,7 @@ const client = new Client({
 });
 
 const __filename = fileURLToPath(import.meta.url);
-const requiredEnvVars = ["TOKEN", "DB_URL", "GUILD_ID", "DAILY_CHANNEL_ID"];
+const requiredEnvVars = ["TOKEN", "DB_URL"];
 
 function validateEnv() {
   const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
@@ -38,10 +38,12 @@ function validateEnv() {
 }
 
 function getGuildIds() {
+  if (!process.env.GUILD_ID) return [];
   try {
-    return process.env.GUILD_ID ? JSON.parse(process.env.GUILD_ID) : [];
+    const parsed = JSON.parse(process.env.GUILD_ID);
+    return Array.isArray(parsed) ? parsed : [parsed];
   } catch (error) {
-    throw new Error("GUILD_ID must be a valid JSON array.");
+    return [process.env.GUILD_ID];
   }
 }
 

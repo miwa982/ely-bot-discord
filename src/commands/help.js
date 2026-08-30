@@ -60,6 +60,15 @@ export default {
           inline: false
         },
         {
+          name: "⚙️ Server Configuration Commands",
+          value: [
+            "`/config set-channel [type] [channel]` → Set notification channel for daily/birthday/event/checklist",
+            "`/config view` → View current channel settings for this server",
+            "`/config reset [type]` → Reset channel assignment back to server default",
+          ].join("\n"),
+          inline: false
+        },
+        {
           name: "💡 Tips",
           value: "You can mark tasks as `TODO 👀`, `IN PROGRESS ⌛`, or `DONE ✅`.\n" +
                  "Use `/checklist view [type]` anytime to refresh progress.",
