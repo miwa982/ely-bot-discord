@@ -1,8 +1,9 @@
 import {
     SlashCommandBuilder,
 } from 'discord.js';
-import { viewChecklist } from './Checklist/viewChecklist.js';
-import { createChecklist } from './Checklist/createChecklist.js';
+import { CHECKLIST_TYPE_CHOICES } from '../constants/bot.js';
+import { viewChecklist } from '../features/checklist/viewChecklist.js';
+import { createChecklist } from '../features/checklist/createChecklist.js';
 
 const commandInfo = {
     name: "checklist",
@@ -21,10 +22,7 @@ export default {
                     option.setName("type")
                         .setDescription("Checklist type default by daily (e.g. daily, weekly)")
                         .setRequired(false)
-                        .addChoices(
-                            { name: "DAILY", value: "daily" },
-                            { name: "WEEKLY", value: "weekly" },
-                        )
+                        .addChoices(...CHECKLIST_TYPE_CHOICES)
                 ))
         .addSubcommand(subcommand => subcommand
             .setName("create")
@@ -34,10 +32,7 @@ export default {
                     .setName("type")
                     .setDescription("Checklist type default by daily (e.g. daily, weekly)")
                     .setRequired(false)
-                    .addChoices(
-                        { name: "DAILY", value: "daily" },
-                        { name: "WEEKLY", value: "weekly" },
-                    ))
+                    .addChoices(...CHECKLIST_TYPE_CHOICES))
         ),
     run: async ({ interaction, client }) => {
         const subcommand = interaction.options.getSubcommand();

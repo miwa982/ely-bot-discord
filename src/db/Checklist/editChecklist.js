@@ -1,10 +1,11 @@
 import ChecklistSchema from "../Checklist/checklistSchema.js";
+import { CHECKLIST_TYPES, DISCORD_FLAGS } from "../../constants/bot.js";
 import { getFormatedTodayDate, getFormattedWeekRangeUTC7, getTodayRangeUTC, getWeekRangeUTC } from '../../utils/date.js';
 
 export async function editChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type") ?? 'daily';
-    const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+    const type = interaction.options.getString("type") ?? CHECKLIST_TYPES.DAILY;
+    const { start, end } = type === CHECKLIST_TYPES.DAILY ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     // Find the checklist for today/week
     const checklist = await ChecklistSchema.findOne({
@@ -18,10 +19,10 @@ export async function editChecklist(interaction, client) {
     });
 
     if (!checklist) {
-        const messageCon = type === 'daily' ? 'today' : 'this week';
+        const messageCon = type === CHECKLIST_TYPES.DAILY ? 'today' : 'this week';
         return interaction.reply({
             content: `⚠️ No checklist found for ${messageCon}. Use \`/checklist create\` first.`,
-            ephemeral: true
+            flags: DISCORD_FLAGS.EPHEMERAL
         });
     }
 
@@ -31,7 +32,7 @@ export async function editChecklist(interaction, client) {
 
     // Helper for generating default title if none is provided
     const getTitleByType = (title, type) => {
-      if (!type || type === "daily") {
+      if (type === CHECKLIST_TYPES.DAILY) {
         return title
           ? `${title} (${getFormatedTodayDate()})`
           : `Checklist (${getFormatedTodayDate()})`;
@@ -48,6 +49,6 @@ export async function editChecklist(interaction, client) {
 
     return interaction.reply({
         content: `✅ Updated checklist **${checklist.title}** ${checklist.description ? `— *${checklist.description}*` : ""}`,
-        ephemeral: true
+        flags: DISCORD_FLAGS.EPHEMERAL
     });
 }

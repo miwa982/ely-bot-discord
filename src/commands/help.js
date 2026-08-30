@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { BOT_CONFIG, DISCORD_FLAGS } from "../constants/bot.js";
 
 export default {
   data: new SlashCommandBuilder()
@@ -10,7 +11,7 @@ export default {
       .setTitle("📖 Ely Bot Help")
       .setAuthor({ name: "Ely", iconURL: "https://media.tenor.com/i-sN2NvSTEYAAAAe/elysia.png" })
       .setDescription("Hehe~ Let me show you how to use me 🎶")
-      .setColor(0xec82b0)
+      .setColor(BOT_CONFIG.EMBED_COLOR)
       .addFields(
         {
           name: "📌 Checklist Commands",
@@ -23,7 +24,9 @@ export default {
         {
           name: "📝 Remind Commands",
           value: [
-            "`/remind [message] [time] → Set a reminder for the future (time: When to remind (e.g., 10m, 2h, 1d or exact time format YYYY-MM-DD hh:mm))`"
+            "`/remind [message] [time] → Set a reminder for the future (time: When to remind (e.g., 10m, 2h, 1d or exact time format YYYY-MM-DD hh:mm))`",
+            "`/checkin-reminder subscribe → Get pinged at 18:00 for daily check-in`",
+            "`/checkin-reminder unsubscribe → Stop the daily check-in ping`",
           ].join("\n"),
           inline: false
         },
@@ -37,6 +40,6 @@ export default {
       .setFooter({ text: "Made with ❤️ by therealwan" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: DISCORD_FLAGS.EPHEMERAL });
   }
 };

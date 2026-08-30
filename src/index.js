@@ -28,21 +28,81 @@ const client = new Client({
 });
 
 const __filename = fileURLToPath(import.meta.url);
+const requiredEnvVars = ["TOKEN", "DB_URL", "GUILD_ID", "DAILY_CHANNEL_ID"];
 
-new CommandKit({
-  client,
-  devGuildIds: process.env.GUILD_ID ? JSON.parse(process.env.GUILD_ID) : [],
-  devUserIds: [process.env.DEV_ID],
-  eventsPath: `${path.dirname(__filename)}/events`,
-  commandsPath: `${path.dirname(__filename)}/commands`,
-  bulkRegister: true,
-});
+function validateEnv() {
+  const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+  if (missingEnvVars.length === 0) return;
+
+  throw new Error(`Missing required environment variable(s): ${missingEnvVars.join(", ")}`);
+}
+
+function getGuildIds() {
+  try {
+    return process.env.GUILD_ID ? JSON.parse(process.env.GUILD_ID) : [];
+  } catch (error) {
+    throw new Error("GUILD_ID must be a valid JSON array.");
+  }
+}
+
+function getRedactedMongoUrlInfo() {
+  if (!process.env.DB_URL) return "DB_URL is not set";
+
+  try {
+    const dbUrl = new URL(process.env.DB_URL);
+    const database = dbUrl.pathname.replace("/", "") || "(none)";
+    const authSource = dbUrl.searchParams.get("authSource") || "(default)";
+
+    return [
+      `user=${decodeURIComponent(dbUrl.username || "(none)")}`,
+      `host=${dbUrl.host}`,
+      `database=${database}`,
+      `authSource=${authSource}`,
+    ].join(", ");
+  } catch (error) {
+    return "DB_URL is not a valid MongoDB URL.";
+  }
+}
+
+function logStartupError(error) {
+  const isMongoAuthError =
+    error?.code === 8000 ||
+    error?.codeName === "AtlasError" ||
+    error?.message?.includes("Authentication failed");
+
+  if (isMongoAuthError) {
+    console.error(
+      "❌ MongoDB authentication failed. Check DB_URL username/password, database user permissions, and authSource in the deploy environment.",
+    );
+    console.error(`MongoDB URL info: ${getRedactedMongoUrlInfo()}`);
+    return;
+  }
+
+  console.error("❌ Bot startup failed:", error);
+}
 
 (async () => {
-  mongoose.set('strictQuery', false);
-  await mongoose.connect(process.env.DB_URL, { keepAliveInitialDelay: true });
-  console.log("Connected to DB");
-  client.login(process.env.TOKEN);
+  try {
+    validateEnv();
+    const guildIds = getGuildIds();
+
+    new CommandKit({
+      client,
+      devGuildIds: guildIds,
+      devUserIds: [process.env.DEV_ID],
+      eventsPath: `${path.dirname(__filename)}/events`,
+      commandsPath: `${path.dirname(__filename)}/commands`,
+      bulkRegister: true,
+    });
+
+    mongoose.set('strictQuery', false);
+    await mongoose.connect(process.env.DB_URL, { keepAliveInitialDelay: 300000 });
+    console.log("Connected to DB");
+    await client.login(process.env.TOKEN);
+  } catch (error) {
+    logStartupError(error);
+    process.exit(1);
+  }
 })();
 
 setInterval(async () => {

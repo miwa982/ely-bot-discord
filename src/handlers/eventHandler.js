@@ -10,7 +10,7 @@ export default (client) => {
 
   for (const eventFolder of eventFolders) {
     const eventFiles = getAllFiles(eventFolder);
-    eventFiles.sort((a, b) => a > b);
+    eventFiles.sort((a, b) => a.localeCompare(b));
 
     const eventName = eventFolder.replace(/\\/g, "/").split("/").pop();
 

@@ -1,10 +1,11 @@
 import ChecklistSchema from "./checklistSchema.js";
+import { CHECKLIST_TYPES, DISCORD_FLAGS } from "../../constants/bot.js";
 import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 
 export async function removeChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type") ?? 'daily';
-    const { start, end } = (!type || type === 'daily') ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+    const type = interaction.options.getString("type") ?? CHECKLIST_TYPES.DAILY;
+    const { start, end } = type === CHECKLIST_TYPES.DAILY ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     // Find checklist for today
     const checklist = await ChecklistSchema.findOne({
@@ -14,10 +15,10 @@ export async function removeChecklist(interaction, client) {
     });
 
     if (!checklist) {
-        const messageCon = (!type || type === 'daily') ? 'today' : 'this week';
+        const messageCon = type === CHECKLIST_TYPES.DAILY ? 'today' : 'this week';
         return interaction.reply({
             content: `❌ No checklist found for ${messageCon}.`,
-            ephemeral: true
+            flags: DISCORD_FLAGS.EPHEMERAL
         });
     }
 
@@ -26,6 +27,6 @@ export async function removeChecklist(interaction, client) {
 
     return interaction.reply({
         content: `🗑️ Checklist **${checklist.title}** has been removed.`,
-        ephemeral: true
+        flags: DISCORD_FLAGS.EPHEMERAL
     });
 }

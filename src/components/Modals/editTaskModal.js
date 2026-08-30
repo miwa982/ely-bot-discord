@@ -1,4 +1,4 @@
-import enumData from "../../enum/enumData.js";
+import { TASK_STATUS_UI } from "../../constants/bot.js";
 import {
   ModalBuilder,
   StringSelectMenuBuilder,
@@ -10,7 +10,7 @@ import {
 
 export default {
   build: async (tasks, type) => {
-    const lstStatus = Object.values(enumData.TaskStatusTypeUI).map(
+    const lstStatus = Object.values(TASK_STATUS_UI).map(
       (status) => ({
         label: status.name,
         value: status.code,

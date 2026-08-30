@@ -1,11 +1,12 @@
 import ChecklistSchema from "../Checklist/checklistSchema.js"
+import { CHECKLIST_TYPES, DISCORD_FLAGS } from "../../constants/bot.js";
 import { getFormatedTodayDate, getFormattedWeekRangeUTC7, getTodayRangeUTC, getWeekRangeUTC } from '../../utils/date.js';
 
 export async function createChecklist(interaction, client) {
     const tag = interaction.user.tag;
-    const type = interaction.options.getString("type") ?? "daily";
+    const type = interaction.options.getString("type") ?? CHECKLIST_TYPES.DAILY;
     const { start, end } =
-      !type || type === "daily" ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
+      type === CHECKLIST_TYPES.DAILY ? getTodayRangeUTC(7) : getWeekRangeUTC(7);
 
     // Check if today's checklist already exists
     const existing = await ChecklistSchema.findOne({
@@ -15,16 +16,16 @@ export async function createChecklist(interaction, client) {
     });
 
     if (existing) {
-      const messageCon = !type || type === "daily" ? "today" : "this week";
+      const messageCon = type === CHECKLIST_TYPES.DAILY ? "today" : "this week";
       return interaction.reply({
         content: `⚠️ You already have a checklist for ${messageCon}: **${existing.title}**`,
-        ephemeral: true,
+        flags: DISCORD_FLAGS.EPHEMERAL,
       });
     }
 
     // Get optional fields
     const getTitleByType = (title, type) => {
-      if (!type || type === "daily") {
+      if (type === CHECKLIST_TYPES.DAILY) {
         return title
           ? title + `(${getFormatedTodayDate()})`
           : `Checklist (${getFormatedTodayDate()})`;
@@ -39,7 +40,7 @@ export async function createChecklist(interaction, client) {
 
     const newChecklist = await ChecklistSchema.create({
       title: title,
-      type: type ?? "daily",
+      type,
       description: description,
       ownerName: tag,
       ownerId: interaction.user.id,
@@ -48,8 +49,7 @@ export async function createChecklist(interaction, client) {
 
     return interaction.reply({
         content: `✅ Created checklist **${newChecklist.title}** ${description ? `— *${description}*` : ""}`,
-        ephemeral: true
+        flags: DISCORD_FLAGS.EPHEMERAL
     });
 }
-
 

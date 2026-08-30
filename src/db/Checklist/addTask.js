@@ -1,24 +1,9 @@
 import TaskStatusType from "../../enum/TaskStatusType.js";
+import { BOT_CONFIG, DISCORD_FLAGS, TASK_SUGGESTIONS, TASK_STATUS_UI } from "../../constants/bot.js";
 import TaskSchema from "./taskSchema.js";
 import ChecklistSchema from "../Checklist/checklistSchema.js"
 import { getTodayRangeUTC, getWeekRangeUTC } from "../../utils/date.js";
 import { EmbedBuilder } from "discord.js";
-
-const eventList = [
-    { name: "HI3 Infinity Abyss", value: `hi3abyss` },
-    { name: "HI3 Elysian Realm", value: `hi3er` },
-    { name: "HI3 Memorial Arena", value: `hi3ma` },
-    { name: "GI Spiral Abyss", value: `giabyss` },
-    { name: "GI Imaginarium Theater", value: `githeater` },
-    { name: "GI Stygian Onslaught", value: `giso` },
-    { name: "GI Weekly Bosses", value: `giweeklybosses` },
-    { name: "GI Memory of Chaos", value: `hsrmoc` },
-    { name: "HSR Pure Fiction", value: `hsrpf` },
-    { name: "HSR Apocalypse Shadow", value: `hsras` },
-    { name: "HSR Simulated/Divergent/Currency", value: `hsrsuducw` },
-    { name: "HSR Weekly Bosses", value: `hsrweeklybosses` },
-    { name: "Material Farming", value: `farm` },
-]
 
 export async function addTask(interaction, client) {
     if (interaction.options.getSubcommand() !== "add") return;
@@ -35,13 +20,13 @@ export async function addTask(interaction, client) {
     }).populate("items");
 
     if (!checklist) {
-        return interaction.reply({ content: "❌ Checklist not found.", ephemeral: true });
+        return interaction.reply({ content: "❌ Checklist not found.", flags: DISCORD_FLAGS.EPHEMERAL });
     }
 
     // Create task
     const task = await TaskSchema.create({
         checklistId: checklist._id,
-        title: eventList.find(choice => choice.value === taskName)?.name || taskName,
+        title: TASK_SUGGESTIONS.find(choice => choice.value === taskName)?.name || taskName,
         status: TaskStatusType.TODO,
     });
 
@@ -51,17 +36,6 @@ export async function addTask(interaction, client) {
     // Rebuild embeds
     const tasksPerPage = 5;
     const pages = [];
-    const statusMap = {
-        TODO: "TODO 👀",
-        IN_PROGRESS: "IN PROGRESS... ⌛",
-        DONE: "DONE ✅"
-    };
-    const chlstStatus = {
-        RESET: '🔄',
-        NOT_RESET: '🚫🔄',
-        RESET_STATUS: '🧹',
-        NOT_RESET_STATUS: '🚫🧹',
-    }
     const countDoneTasks = (items) => {
         return items.filter(item => item.status === TaskStatusType.DONE).length;
     }
@@ -78,14 +52,14 @@ export async function addTask(interaction, client) {
             iconURL: interaction.user.avatarURL(),
           })
 
-          .setColor(0xec82b0)
+          .setColor(BOT_CONFIG.EMBED_COLOR)
           .setDescription(
             slice && slice.length > 0
               ? slice
                   .map(
                     (task, idx) =>
                       `**${i + idx + 1}.** ${task.title} — \`${
-                        statusMap[task.status] || task.status
+                        TASK_STATUS_UI[task.status]?.name ?? task.status
                       }\``,
                   )
                   .join("\n")
@@ -103,7 +77,7 @@ export async function addTask(interaction, client) {
 
     interaction.reply({
         content: `✅ Task **${taskName}** added to checklist **${checklist.title}**!`,
-        ephemeral: true
+        flags: DISCORD_FLAGS.EPHEMERAL
     });
 
     // if (checklist.lastMessageId && checklist.channelId) {

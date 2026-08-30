@@ -2,7 +2,7 @@ import {
     EmbedBuilder
 } from "discord.js";
 
-import enumData from "../enum/enumData.js"
+import { BOT_CONFIG, CHECKLIST_TYPES, TASK_STATUS_UI } from "../constants/bot.js";
 
 export class ChecklistEmbed {
     constructor(checklist, interaction) {
@@ -10,23 +10,18 @@ export class ChecklistEmbed {
         this.interaction = interaction
     }
 
-    taskStatusMap = {
-        TODO: "TODO 👀",
-        IN_PROGRESS: "IN PROGRESS... ⌛",
-        DONE: "DONE ✅"
-    };
-
     render() {
+        const tasks = this.checklist.items ?? [];
+
         return new EmbedBuilder()
-            .setTitle(`${this.checklist.title} (${this.checklist.type ?? 'daily'})`)
+            .setTitle(`${this.checklist.title} (${this.checklist.type ?? CHECKLIST_TYPES.DAILY})`)
             .setAuthor({ name: this.interaction.user.tag, iconURL: this.interaction.user.avatarURL() })
 
-            .setColor(0xec82b0)
+            .setColor(BOT_CONFIG.EMBED_COLOR)
             .setDescription(
-                this.checklist && this.checklist.length > 0 ?
-                    this.checklist.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${enumData.TaskStatusTypeUI[task.status] || task.status
-                        }\``).join("\n")
-                    : `✨ No tasks yet. Use \`/task add ${this.checklist.type === 'weekly' ? 'type:WEEKLY ' : ''}\`to add one!`
+                tasks.length > 0
+                    ? tasks.map((task, idx) => `**${idx + 1}.** ${task.title} — \`${TASK_STATUS_UI[task.status]?.name ?? task.status}\``).join("\n")
+                    : `✨ No tasks yet. Click **"📋 Add"** button to add one!`
             )
             .setTimestamp();
     }
