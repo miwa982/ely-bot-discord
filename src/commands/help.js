@@ -51,6 +51,15 @@ export default {
           inline: false
         },
         {
+          name: "🌸 Event & Schedule Commands",
+          value: [
+            "`/event dashboard` → Open interactive event dashboard with presets and manager",
+            "`/event create` → Open modal to create custom weekly/interval/one-time game events",
+            "`/event list` → View active and upcoming game events and timers",
+          ].join("\n"),
+          inline: false
+        },
+        {
           name: "💡 Tips",
           value: "You can mark tasks as `TODO 👀`, `IN PROGRESS ⌛`, or `DONE ✅`.\n" +
                  "Use `/checklist view [type]` anytime to refresh progress.",
