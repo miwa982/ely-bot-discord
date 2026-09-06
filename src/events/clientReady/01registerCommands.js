@@ -1,70 +1,37 @@
-import getLocalCommands from "../../utils/getLocalCommands.js";
-import getApplicationCommands from "../../utils/getApplicationCommands.js";
-import areCommandsDifferent from "../../utils/areCommandsDifferent.js";
-
-export async function registerCommandsForGuild(client, guildId, localCommands = null) {
+export async function cleanGuildCommands(client, guildId) {
   try {
-    const commands = localCommands || (await getLocalCommands());
-    const applicationCommands = await getApplicationCommands(client, guildId);
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
+    if (!guild) return;
 
-    for (const localCommand of commands) {
-      const commandData = localCommand.data.toJSON();
-      const existingCommand = await applicationCommands.cache.find(
-        (cmd) => cmd.name === commandData.name,
+    const guildCommands = await guild.commands.fetch().catch(() => null);
+    if (guildCommands && guildCommands.size > 0) {
+      await guild.commands.set([]);
+      console.log(
+        `[Commands] Cleaned up ${guildCommands.size} guild command(s) in "${guild.name}" (${guildId}) to prevent duplicates.`,
       );
-
-      if (existingCommand) {
-        if (localCommand.deleted) {
-          await applicationCommands.delete(existingCommand.id);
-          console.log(`Deleted command "${commandData.name}" in guild ${guildId}.`);
-          continue;
-        }
-
-        if (areCommandsDifferent(existingCommand, commandData)) {
-          await applicationCommands.edit(existingCommand.id, {
-            description: commandData.description,
-            options: commandData.options,
-          });
-          console.log(`Edited command "${commandData.name}" in guild ${guildId}.`);
-        }
-      } else {
-        if (localCommand.deleted) {
-          continue;
-        }
-
-        await applicationCommands.create(commandData);
-        console.log(`Registered command "${commandData.name}" in guild ${guildId}.`);
-      }
     }
   } catch (error) {
-    console.error(`Error registering commands for guild ${guildId}:`, error);
+    console.error(`[Commands] Failed to clean guild commands for ${guildId}:`, error);
   }
+}
+
+// Backward-compatibility export
+export async function registerCommandsForGuild(client, guildId) {
+  await cleanGuildCommands(client, guildId);
 }
 
 export default async (client) => {
   try {
-    const localCommands = await getLocalCommands();
-
-    // Dynamically detect all guilds the bot belongs to
-    let guildIds = Array.from(client.guilds.cache.keys());
-
-    // Optional legacy fallback if GUILD_ID is provided
-    if (process.env.GUILD_ID) {
-      try {
-        const parsed = JSON.parse(process.env.GUILD_ID);
-        const list = Array.isArray(parsed) ? parsed : [parsed];
-        guildIds = Array.from(new Set([...guildIds, ...list]));
-      } catch {
-        guildIds = Array.from(new Set([...guildIds, process.env.GUILD_ID]));
-      }
+    // CommandKit automatically registers all slash and context menu commands globally.
+    // Guild-scoped commands cause Discord to show duplicate entries in the slash picker and context menu.
+    // Clean up guild commands across all guilds so only global commands remain.
+    const guilds = await client.guilds.fetch();
+    for (const [guildId] of guilds) {
+      await cleanGuildCommands(client, guildId);
     }
 
-    for (const guildId of guildIds) {
-      await registerCommandsForGuild(client, guildId, localCommands);
-    }
-
-    console.log(`Slash commands were registered successfully across ${guildIds.length} guild(s)!`);
+    console.log(`[Commands] Verified clean guild commands across ${guilds.size} guild(s). Global commands are active.`);
   } catch (error) {
-    console.log(`There was an error: ${error}`);
+    console.error("[Commands] Error during guild command cleanup:", error);
   }
 };

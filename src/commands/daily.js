@@ -13,6 +13,7 @@ import {
   getUTC7DateKey,
 } from "../utils/date.js";
 import { Elysia } from "../utils/elysia.js";
+import { buildDailyRecapEmbed } from "../components/DailyCheckin/dailyRecapEmbed.js";
 
 const commandInfo = {
   name: "daily",
@@ -464,6 +465,11 @@ export default {
             .setDescription("Member to uncheck (Defaults to yourself)")
             .setRequired(false),
         ),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("recap")
+        .setDescription("View the daily check-in final recap embed for reminder subscribers"),
     ),
 
   run: async ({ interaction, client }) => {
@@ -477,6 +483,20 @@ export default {
     if (subcommand === "send") {
       const randomResponse = Elysia.daily_response();
       return sendDailyPoll(interaction, null, client, randomResponse);
+    }
+
+    if (subcommand === "recap") {
+      await interaction.deferReply();
+      const channel = interaction.channel;
+      const recapEmbed = await buildDailyRecapEmbed({
+        channel,
+        guild: interaction.guild,
+        client,
+      });
+
+      return interaction.editReply({
+        embeds: [recapEmbed],
+      });
     }
 
     if (subcommand === "check" || subcommand === "uncheck") {

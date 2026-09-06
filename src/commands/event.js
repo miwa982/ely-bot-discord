@@ -1,6 +1,11 @@
 import { SlashCommandBuilder } from "discord.js";
-import { buildEventDashboard } from "../components/Event/eventDashboard.js";
+import {
+  buildEditSelectMenu,
+  buildEventDashboard,
+  buildEventList,
+} from "../components/Event/eventDashboard.js";
 import createEventModal from "../components/Modals/createEventModal.js";
+import { DISCORD_FLAGS } from "../constants/bot.js";
 
 const commandInfo = {
   name: "event",
@@ -14,7 +19,12 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("dashboard")
-        .setDescription("Open the interactive event & schedule dashboard"),
+        .setDescription("Open the interactive event & schedule management dashboard"),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("list")
+        .setDescription("View the public game timetable and active event schedules"),
     )
     .addSubcommand((sub) =>
       sub
@@ -23,8 +33,8 @@ export default {
     )
     .addSubcommand((sub) =>
       sub
-        .setName("list")
-        .setDescription("View all active and upcoming game events"),
+        .setName("edit")
+        .setDescription("Select and edit an existing game event or schedule"),
     ),
 
   run: async ({ interaction }) => {
@@ -40,7 +50,32 @@ export default {
       return interaction.showModal(modal);
     }
 
-    // Default to dashboard
+    if (subcommand === "edit") {
+      const dashboard = await buildEventDashboard(interaction.guildId);
+      if (dashboard.events.length === 0) {
+        return interaction.reply({
+          content: "ℹ️ No events found to edit. Use `/event create` or `/event dashboard` to add one first!",
+          flags: DISCORD_FLAGS.EPHEMERAL,
+        });
+      }
+
+      const editRow = buildEditSelectMenu(dashboard.events);
+      return interaction.reply({
+        content: "🌸 Select which event you want to edit:",
+        components: [editRow],
+        flags: DISCORD_FLAGS.EPHEMERAL,
+      });
+    }
+
+    if (subcommand === "list") {
+      const list = await buildEventList(interaction.guildId);
+      return interaction.reply({
+        embeds: list.embeds,
+        components: list.components,
+      });
+    }
+
+    // Default to management dashboard
     const dashboard = await buildEventDashboard(interaction.guildId);
     return interaction.reply({
       embeds: dashboard.embeds,

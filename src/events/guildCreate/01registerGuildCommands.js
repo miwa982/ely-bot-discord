@@ -1,6 +1,6 @@
-import { registerCommandsForGuild } from "../clientReady/01registerCommands.js";
+import { cleanGuildCommands } from "../clientReady/01registerCommands.js";
 
 export default async (guild, client) => {
-  console.log(`Bot joined new guild: ${guild.name} (${guild.id}). Registering slash commands...`);
-  await registerCommandsForGuild(client, guild.id);
+  console.log(`[Guild] Bot joined new guild: ${guild.name} (${guild.id}). Ensuring no duplicate guild commands exist...`);
+  await cleanGuildCommands(client, guild.id);
 };

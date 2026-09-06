@@ -24,10 +24,11 @@
   * Automatically posted every day at **03:00 UTC+7** (aligned with the Hoyoverse server reset).
   * Interactive toggle buttons with custom emojis for *Genshin Impact*, *Honkai: Star Rail*, *Honkai Impact 3rd*, *Zenless Zone Zero*, *Wuthering Waves*, and *Miliastra Wonderland*.
   * **Valid until 03:00 AM UTC+7**: Check in for yourself or friends all night long without getting cut off at midnight!
-* ⏰ **Selective 18:00 (6 PM) Daily Check-in Reminders**:
-  * Pings only the members who haven't completed their commissions by 18:00 UTC+7.
-  * **Per-User Game Preferences**: Subscribe to only the games you actually play!
-  * **Interactive Settings Panel**: Right-click any member (`Apps > Reminder Settings`) or use `/checkin-reminder settings` to pick games via a multi-select dropdown.
+  * 🌸 **03:00 AM Finalized Recap Embed**: Before each reset, Elysia sends a finalized report summarizing check-in results for everyone with an assigned reminder!
+* ⏰ **Customizable Daily Check-in Reminders**:
+  * **Per-User Preferred Ping Time**: Choose when you want Elysia to ping you (e.g. 12:00, 18:00, 20:00, 22:00 UTC+7).
+  * **Per-User Game Selection**: Choose only the games you actually play!
+  * **Interactive Settings Panel**: Right-click any member (`Apps > Reminder Settings`) or use `/checkin-reminder settings` to pick games and custom ping time via dropdown menus.
 * 🌸 **Game Events & Permanent Schedule Manager**:
   * Full dashboard with one-click **Quick Presets** for Honkai Impact 3rd Abyss, Elysian Realm, Memorial Arena, and Hoyoverse Weekly Reset.
   * **Self-Healing & Permanent**: Weekly and interval events automatically roll over forever across bot restarts and downtimes.
@@ -50,25 +51,31 @@
 | Command / Action | Description |
 | :--- | :--- |
 | `/daily send` | Posts today's interactive daily check-in poll in the current channel. |
+| `/daily recap` | Generates the finalized check-in results embed for all reminder subscribers for the concluding cycle. |
 | `/daily check [game] (user)` | Marks check-in for a game (defaults to yourself, or specify a `@friend`). Valid all night until 3:00 AM UTC+7! |
 | `/daily uncheck [game] (user)` | Removes check-in for a game. |
 | `Right-click User → Apps → Daily Check-in` | Opens an interactive popup with buttons to toggle check-in for that member on today's active poll. |
 
+> [!NOTE]
+> **03:00 AM Finalized Recap Embed:**
+> At 03:00 AM UTC+7 (Hoyoverse daily reset), Elysia automatically posts a beautiful summary embed to the daily channel showing the finalized results for all reminder subscribers (highlighting All Clears, completed counts, and any missed games) right before opening the new cycle's poll!
+
 ---
 
-### ⏰ Check-in Reminders & Selective Games
+### ⏰ Check-in Reminders & Customizable Ping Times
 
 | Command / Action | Description |
 | :--- | :--- |
-| `Right-click User → Apps → Reminder Settings` | **(Recommended)** Opens the interactive reminder panel for that member with a multi-select dropdown to pick their games! |
+| `Right-click User → Apps → Reminder Settings` | **(Recommended)** Opens the interactive reminder panel for that member with dropdowns to pick their games AND their custom ping time! |
 | `/checkin-reminder settings (user)` | Opens the interactive game selection and reminder panel. |
-| `/checkin-reminder subscribe (user) (games)` | Subscribes a user to the 18:00 reminder. Enter specific games (`gi, hsr`), or leave blank to open the dropdown menu. |
-| `/checkin-reminder unsubscribe (user)` | Turns off 18:00 reminder pings for that user. |
-| `/checkin-reminder status (user)` | Displays active reminder status and list of registered games. |
+| `/checkin-reminder subscribe (user) (hour) (games)` | Subscribes a user with an optional custom hour (0–23 UTC+7, default 18:00) and specific games (`gi, hsr`), or leave blank to open the dropdown menu. |
+| `/checkin-reminder unsubscribe (user)` | Turns off daily reminder pings for that user. |
+| `/checkin-reminder status (user)` | Displays active reminder status, ping time, and list of registered games. |
 
 > [!TIP]
 > **How Selective Reminders Work:**
-> If you only play *Genshin Impact* and *Honkai: Star Rail*, you will **never** be pinged for *Zenless Zone Zero* or *Honkai Impact 3rd*. If you finish both of your chosen games before 18:00 UTC+7, Elysia won't ping you at all!
+> - **Custom Hours:** You can choose when Elysia pings you (e.g. 12:00, 18:00, 20:00, 22:00, etc. in UTC+7).
+> - **Zero Spam:** If you only play *Genshin Impact* and *Honkai: Star Rail*, you will **never** be pinged for *Zenless Zone Zero* or *Honkai Impact 3rd*. If you finish your chosen games before your reminder time, Elysia won't ping you at all!
 
 ---
 
@@ -76,9 +83,10 @@
 
 | Command | Description |
 | :--- | :--- |
-| `/event dashboard` | Opens the main event manager with **`➕ Add Event`**, **`⚡ Quick Presets`**, and **`🗑️ Delete`**. |
+| `/event dashboard` | Opens the main interactive event manager with **`➕ Add Event`**, **`⚡ Quick Presets`**, **`✏️ Edit Event`**, **`🗑️ Delete Event`**, and **`🔄 Refresh`**. |
+| `/event list` | Displays a clean, public timetable of ongoing and upcoming events with real-time countdowns. |
 | `/event create` | Opens the event creation modal. |
-| `/event list` | Displays active and upcoming events with real-time countdowns. |
+| `/event edit` | Selects an existing event and opens a pre-filled modal to edit its schedule, reminders, title, or notes. |
 
 #### Schedule Format Examples:
 * **Weekly Cycles (Permanent)**: `Mon 14:00 - Wed 21:00` or `Fri 2PM - Sun 9PM` *(Automatically rolls over every week)*.
