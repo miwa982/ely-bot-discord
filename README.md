@@ -54,7 +54,8 @@
 | `/daily recap` | Generates the finalized check-in results embed for all reminder subscribers for the concluding cycle. |
 | `/daily check [game] (user)` | Marks check-in for a game (defaults to yourself, or specify a `@friend`). Valid all night until 3:00 AM UTC+7! |
 | `/daily uncheck [game] (user)` | Removes check-in for a game. |
-| `Right-click User → Apps → Daily Check-in` | Opens an interactive popup with buttons to toggle check-in for that member on today's active poll. |
+| `[🌟 Check My Games]` | Button on the daily poll that checks in (or toggles) all registered games for the clicking user in one tap! |
+| `Right-click User → Apps → Daily Check-in` | Opens an interactive popup with buttons to toggle check-in for that member (includes `[🌟 Check Registered Games]`!). |
 
 > [!NOTE]
 > **03:00 AM Finalized Recap Embed:**

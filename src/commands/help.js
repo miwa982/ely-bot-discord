@@ -29,6 +29,7 @@ export default {
             "`/daily uncheck [game] (user)` → Remove check-in for a member (or yourself)",
             "`Right-click User → Apps → Daily Check-in` → Interactive popup to check in games for a member",
             "✨ *Interactive Poll Buttons:* Click any game button on the message to toggle check-in instantly!",
+            "🌟 *One-Tap Check-in:* Click **`[🌟 Check My Games]`** to check in all your registered games at once!",
             "🌸 *03:00 AM Finalized Recap Embed:* Before each new cycle begins, Elysia posts a pretty report listing every reminder subscriber's check-in results!",
             "⏰ *Valid all night until 03:00 AM UTC+7* matching Hoyoverse server reset.",
             "🎮 *Supported Games:* Genshin Impact, Honkai: Star Rail, Honkai Impact 3rd, Zenless Zone Zero, Wuthering Waves, and Miliastra Wonderland!",
