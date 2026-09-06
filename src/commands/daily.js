@@ -486,48 +486,87 @@ export default {
     }
 
     if (subcommand === "recap") {
-      await interaction.deferReply();
-      const channel = interaction.channel;
-      const recapEmbed = await buildDailyRecapEmbed({
-        channel,
-        guild: interaction.guild,
-        client,
-      });
+      try {
+        if (!interaction.deferred && !interaction.replied) {
+          await interaction.deferReply();
+        }
+        const channel = interaction.channel;
+        const recapEmbed = await buildDailyRecapEmbed({
+          channel,
+          guild: interaction.guild,
+          client,
+        });
 
-      return interaction.editReply({
-        embeds: [recapEmbed],
-      });
+        if (interaction.deferred) {
+          return await interaction.editReply({
+            embeds: [recapEmbed],
+          });
+        }
+        return await interaction.reply({
+          embeds: [recapEmbed],
+        });
+      } catch (err) {
+        console.error("Error running /daily recap:", err);
+        if (interaction.deferred) {
+          return await interaction.editReply({
+            content: `❌ Could not generate the daily recap: ${err?.message || "Unknown error"}`,
+          }).catch(() => null);
+        } else if (!interaction.replied) {
+          return await interaction.reply({
+            content: `❌ Could not generate the daily recap: ${err?.message || "Unknown error"}`,
+            flags: DISCORD_FLAGS.EPHEMERAL,
+          }).catch(() => null);
+        }
+      }
     }
 
     if (subcommand === "check" || subcommand === "uncheck") {
-      const gameCode = interaction.options.getString("game");
-      const targetUser = interaction.options.getUser("user") || interaction.user;
+      try {
+        const gameCode = interaction.options.getString("game");
+        const targetUser = interaction.options.getUser("user") || interaction.user;
 
-      await interaction.deferReply({ flags: DISCORD_FLAGS.EPHEMERAL });
+        if (!interaction.deferred && !interaction.replied) {
+          await interaction.deferReply({ flags: DISCORD_FLAGS.EPHEMERAL });
+        }
 
-      const result = await modifyUserCheckin({
-        client,
-        targetUserId: targetUser.id,
-        gameCode,
-        action: subcommand,
-        channelId: interaction.channelId,
-        guildId: interaction.guildId,
-      });
-
-      if (!result.success) {
-        return interaction.editReply({
-          content: `❌ ${result.error}`,
+        const result = await modifyUserCheckin({
+          client,
+          targetUserId: targetUser.id,
+          gameCode,
+          action: subcommand,
+          channelId: interaction.channelId,
+          guildId: interaction.guildId,
         });
+
+        if (!result.success) {
+          if (interaction.deferred) {
+            return await interaction.editReply({
+              content: `❌ ${result.error}`,
+            });
+          }
+          return await interaction.reply({
+            content: `❌ ${result.error}`,
+            flags: DISCORD_FLAGS.EPHEMERAL,
+          });
+        }
+
+        const statusText =
+          subcommand === "check"
+            ? `✅ Checked in <@${targetUser.id}> for **${result.game.label}**!`
+            : `✅ Removed check-in for <@${targetUser.id}> on **${result.game.label}**.`;
+
+        if (interaction.deferred) {
+          return await interaction.editReply({
+            content: statusText,
+          });
+        }
+        return await interaction.reply({
+          content: statusText,
+          flags: DISCORD_FLAGS.EPHEMERAL,
+        });
+      } catch (err) {
+        console.error(`Error running /daily ${subcommand}:`, err);
       }
-
-      const statusText =
-        subcommand === "check"
-          ? `✅ Checked in <@${targetUser.id}> for **${result.game.label}**!`
-          : `✅ Removed check-in for <@${targetUser.id}> on **${result.game.label}**.`;
-
-      return interaction.editReply({
-        content: statusText,
-      });
     }
   },
 
