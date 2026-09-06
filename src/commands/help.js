@@ -50,10 +50,11 @@ export default {
         {
           name: "🌸 Game Events & Permanent Schedules",
           value: [
-            "`/event dashboard` → Open interactive event dashboard with presets and management",
+            "`/event dashboard` → Open interactive event manager (`Add`, `Quick Presets`, `Edit`, `Delete`)",
+            "`/event list` → View clean public timetable of active & upcoming game events",
             "`/event create` → Open modal to create custom weekly/interval/one-time game events",
-            "`/event list` → View active and upcoming game events and timers",
-            "✨ *Interactive Buttons:* `[➕ Add Event]`, `[⚡ Quick Presets]`, `[🗑️ Delete Event]`, `[🔄 Refresh]`",
+            "`/event edit` → Select and edit an existing event (title, schedule, reminders, notes)",
+            "✨ *Dashboard Buttons:* `[➕ Add Event]`, `[⚡ Quick Presets]`, `[✏️ Edit Event]`, `[🗑️ Delete Event]`, `[🔄 Refresh]`",
             "🔁 *Permanent Rollover:* Weekly and interval events automatically roll over forever!",
           ].join("\n"),
           inline: false,

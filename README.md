@@ -83,9 +83,10 @@
 
 | Command | Description |
 | :--- | :--- |
-| `/event dashboard` | Opens the main event manager with **`➕ Add Event`**, **`⚡ Quick Presets`**, and **`🗑️ Delete`**. |
+| `/event dashboard` | Opens the main interactive event manager with **`➕ Add Event`**, **`⚡ Quick Presets`**, **`✏️ Edit Event`**, **`🗑️ Delete Event`**, and **`🔄 Refresh`**. |
+| `/event list` | Displays a clean, public timetable of ongoing and upcoming events with real-time countdowns. |
 | `/event create` | Opens the event creation modal. |
-| `/event list` | Displays active and upcoming events with real-time countdowns. |
+| `/event edit` | Selects an existing event and opens a pre-filled modal to edit its schedule, reminders, title, or notes. |
 
 #### Schedule Format Examples:
 * **Weekly Cycles (Permanent)**: `Mon 14:00 - Wed 21:00` or `Fri 2PM - Sun 9PM` *(Automatically rolls over every week)*.
