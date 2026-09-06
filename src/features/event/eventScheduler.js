@@ -1,8 +1,57 @@
 import { AttachmentBuilder, EmbedBuilder } from "discord.js";
 import { BOT_CONFIG } from "../../constants/bot.js";
 import EventSchema from "../../db/Event/eventSchema.js";
+import GuildConfigSchema from "../../db/GuildConfig/guildConfigSchema.js";
 import { Elysia } from "../../utils/elysia.js";
+import { resolveGuildChannel } from "../../utils/guildConfig.js";
 import { calculateWeeklyDates } from "../../utils/scheduleParser.js";
+
+async function resolveEventChannel(client, ev) {
+  let channel = null;
+
+  // 1. Check if guild has a configured event channel
+  if (ev.guildId) {
+    const config = await GuildConfigSchema.findOne({ guildId: ev.guildId });
+    if (config?.eventChannelId) {
+      channel =
+        client.channels.cache.get(config.eventChannelId) ||
+        (await client.channels.fetch(config.eventChannelId).catch(() => null));
+    }
+  }
+
+  // 2. If no configured channel, fallback to the channel saved on the event
+  if ((!channel || !channel.isTextBased()) && ev.channelId) {
+    channel =
+      client.channels.cache.get(ev.channelId) ||
+      (await client.channels.fetch(ev.channelId).catch(() => null));
+  }
+
+  // 3. If ev.guildId is missing, attempt to recover it from channel and re-check guild config
+  if (!ev.guildId && channel?.guildId) {
+    ev.guildId = channel.guildId;
+    const config = await GuildConfigSchema.findOne({ guildId: ev.guildId });
+    if (config?.eventChannelId && config.eventChannelId !== channel.id) {
+      const configuredChan =
+        client.channels.cache.get(config.eventChannelId) ||
+        (await client.channels.fetch(config.eventChannelId).catch(() => null));
+      if (configuredChan && configuredChan.isTextBased()) {
+        channel = configuredChan;
+      }
+    }
+  }
+
+  // 4. Fallback: resolve via guild channel fallback logic
+  if ((!channel || !channel.isTextBased()) && ev.guildId) {
+    const guild =
+      client.guilds.cache.get(ev.guildId) ||
+      (await client.guilds.fetch(ev.guildId).catch(() => null));
+    if (guild) {
+      channel = await resolveGuildChannel(guild, "event", client);
+    }
+  }
+
+  return channel && channel.isTextBased() ? channel : null;
+}
 
 export async function processEvents(client) {
   const now = new Date();
@@ -11,8 +60,16 @@ export async function processEvents(client) {
     const events = await EventSchema.find();
 
     for (const ev of events) {
-      const channel = await client.channels.fetch(ev.channelId).catch(() => null);
-      if (!channel || !channel.isTextBased()) continue;
+      const channel = await resolveEventChannel(client, ev);
+      if (!channel) continue;
+
+      let modified = false;
+
+      // Keep channelId synchronized if the configured channel changed
+      if (ev.channelId !== channel.id) {
+        ev.channelId = channel.id;
+        modified = true;
+      }
 
       const defaultImage = Elysia.DEFAULT_REMINDER_IMG;
       const eventImage = ev.thumbnailUrl || ev.event_start || defaultImage;
@@ -41,6 +98,7 @@ export async function processEvents(client) {
         });
 
         ev.started = true;
+        modified = true;
       }
 
       // 2. Dynamic Reminders Before End
@@ -75,6 +133,7 @@ export async function processEvents(client) {
             });
 
             ev.sentReminderLabels.push(reminder.label);
+            modified = true;
           }
         }
       }
@@ -101,6 +160,7 @@ export async function processEvents(client) {
         });
 
         ev.ended = true;
+        modified = true;
 
         // Rollover for weekly cycles
         if (ev.scheduleType === "weekly" && ev.weeklyPattern) {
@@ -116,15 +176,19 @@ export async function processEvents(client) {
           ev.sentReminderLabels = [];
         } else if (ev.scheduleType === "interval" && ev.interval > 0) {
           const intervalMs = ev.interval * 24 * 60 * 60 * 1000;
-          ev.startDate = new Date(ev.startDate.getTime() + intervalMs);
-          ev.endDate = new Date(ev.endDate.getTime() + intervalMs);
+          do {
+            ev.startDate = new Date(ev.startDate.getTime() + intervalMs);
+            ev.endDate = new Date(ev.endDate.getTime() + intervalMs);
+          } while (ev.endDate <= now);
           ev.started = false;
           ev.ended = false;
           ev.sentReminderLabels = [];
         }
       }
 
-      await ev.save();
+      if (modified) {
+        await ev.save();
+      }
     }
   } catch (error) {
     console.error("Error processing events:", error);

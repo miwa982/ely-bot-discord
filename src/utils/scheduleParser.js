@@ -136,7 +136,7 @@ export function calculateWeeklyDates(weeklyPattern, now = new Date(), tzOffsetHo
   let candidateEnd = getUtcDateForOffset(diffStart + cycleDurationDays, endHour, endMinute);
 
   // If the cycle already ended in the past, move to next week (+7 days)
-  if (candidateEnd.getTime() <= now.getTime()) {
+  while (candidateEnd.getTime() <= now.getTime()) {
     candidateStart = new Date(candidateStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     candidateEnd = new Date(candidateEnd.getTime() + 7 * 24 * 60 * 60 * 1000);
   }

@@ -10,6 +10,7 @@ import createEventModal, {
 } from "../../components/Modals/createEventModal.js";
 import { BOT_CONFIG, DISCORD_FLAGS } from "../../constants/bot.js";
 import EventSchema from "../../db/Event/eventSchema.js";
+import GuildConfigSchema from "../../db/GuildConfig/guildConfigSchema.js";
 import {
   parseReminderString,
   parseScheduleInput,
@@ -40,10 +41,18 @@ export default async (interaction, client) => {
 
     const reminderThresholds = parseReminderString(rawReminders);
 
+    let targetChannelId = interaction.channelId;
+    if (interaction.guildId) {
+      const config = await GuildConfigSchema.findOne({ guildId: interaction.guildId });
+      if (config?.eventChannelId) {
+        targetChannelId = config.eventChannelId;
+      }
+    }
+
     const newEvent = await EventSchema.create({
       title,
       description,
-      channelId: interaction.channelId,
+      channelId: targetChannelId,
       guildId: interaction.guildId,
       thumbnailUrl,
       rawSchedule,
@@ -70,6 +79,7 @@ export default async (interaction, client) => {
         `**Schedule:** \`${rawSchedule}\`\n` +
           `**Start:** <t:${startUnix}:F> (<t:${startUnix}:R>)\n` +
           (endUnix ? `**End:** <t:${endUnix}:F> (<t:${endUnix}:R>)\n` : "") +
+          `**Channel:** <#${targetChannelId}>\n` +
           `**Reminders:** \`${rawReminders}\`\n` +
           (description ? `**Description:** *${description}*\n` : ""),
       )
@@ -141,10 +151,18 @@ export default async (interaction, client) => {
       const parsedSchedule = parseScheduleInput(preset.schedule);
       const reminderThresholds = parseReminderString(preset.reminders);
 
+      let targetChannelId = interaction.channelId;
+      if (interaction.guildId) {
+        const config = await GuildConfigSchema.findOne({ guildId: interaction.guildId });
+        if (config?.eventChannelId) {
+          targetChannelId = config.eventChannelId;
+        }
+      }
+
       await EventSchema.create({
         title: preset.title,
         description: preset.description,
-        channelId: interaction.channelId,
+        channelId: targetChannelId,
         guildId: interaction.guildId,
         thumbnailUrl: preset.thumbnail,
         rawSchedule: preset.schedule,

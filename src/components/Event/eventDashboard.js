@@ -8,6 +8,7 @@ import {
 } from "discord.js";
 import { BOT_CONFIG } from "../../constants/bot.js";
 import EventSchema from "../../db/Event/eventSchema.js";
+import GuildConfigSchema from "../../db/GuildConfig/guildConfigSchema.js";
 
 export const EVENT_PRESETS = [
   {
@@ -57,6 +58,16 @@ export async function buildEventDashboard(guildId = null) {
   const events = await EventSchema.find(guildId ? { guildId } : {}).sort({ startDate: 1 });
   const now = new Date();
 
+  let channelNotice = "";
+  if (guildId) {
+    const config = await GuildConfigSchema.findOne({ guildId });
+    if (config?.eventChannelId) {
+      channelNotice = `📢 **Notification Channel:** <#${config.eventChannelId}>`;
+    } else {
+      channelNotice = `📢 **Notification Channel:** Server Default / Current *(Use \`/config set-channel type:event\` to assign a channel)*`;
+    }
+  }
+
   const embed = new EmbedBuilder()
     .setAuthor({
       name: "Elysia Event Manager",
@@ -70,7 +81,8 @@ export async function buildEventDashboard(guildId = null) {
 
   if (events.length === 0) {
     embed.setDescription(
-      "✨ No active events or schedules registered yet.\n\n" +
+      (channelNotice ? `${channelNotice}\n\n` : "") +
+        "✨ No active events or schedules registered yet.\n\n" +
         "Click **`➕ Add Event`** or choose a **`⚡ Quick Preset`** below to create one!",
     );
   } else {
@@ -98,7 +110,10 @@ export async function buildEventDashboard(guildId = null) {
       return `**${index + 1}. ${ev.title}** — ${statusIcon}\n${timeInfo}${scheduleText}${reminderText}${descText}`;
     });
 
-    embed.setDescription(eventLines.join("\n\n"));
+    embed.setDescription(
+      (channelNotice ? `${channelNotice}\n\n` : "") +
+        eventLines.join("\n\n"),
+    );
   }
 
   const actionButtons = new ActionRowBuilder().addComponents(

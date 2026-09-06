@@ -34,9 +34,11 @@ export default {
         {
           name: "📝 Remind Commands",
           value: [
-            "`/remind [message] [time] → Set a reminder for the future (time: When to remind (e.g., 10m, 2h, 1d or exact time format YYYY-MM-DD hh:mm))`",
-            "`/checkin-reminder subscribe → Get pinged at 18:00 for daily check-in`",
-            "`/checkin-reminder unsubscribe → Stop the daily check-in ping`",
+            "`/remind [message] [time]` → Set a reminder for the future",
+            "`/checkin-reminder settings (user)` → Interactive panel to select reminder games for yourself or others",
+            "`/checkin-reminder subscribe (user) (games)` → Subscribe to 18:00 daily check-in reminder",
+            "`/checkin-reminder unsubscribe (user)` → Stop the 18:00 daily check-in ping",
+            "`Right-click User → Apps → Reminder Settings` → Open interactive game reminder settings for a member",
           ].join("\n"),
           inline: false
         },

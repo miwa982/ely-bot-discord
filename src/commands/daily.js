@@ -7,7 +7,11 @@ import {
 } from "discord.js";
 import { BOT_CONFIG, DAILY_GAMES, DISCORD_FLAGS } from "../constants/bot.js";
 import DailyCheckinMessageSchema from "../db/DailyCheckin/dailyCheckinMessageSchema.js";
-import { getFormatedTodayDate, getUTC7DateKey } from "../utils/date.js";
+import {
+  getFormatedTodayDate,
+  getHoyoverseCycleDateKey,
+  getUTC7DateKey,
+} from "../utils/date.js";
 import { Elysia } from "../utils/elysia.js";
 
 const commandInfo = {
@@ -158,7 +162,7 @@ async function persistDailyMessage(message) {
 
   try {
     await DailyCheckinMessageSchema.findOneAndUpdate(
-      { dateKey: getUTC7DateKey(), channelId: message.channelId },
+      { dateKey: getHoyoverseCycleDateKey(), channelId: message.channelId },
       {
         messageId: message.id,
         guildId: message.guildId ?? null,
@@ -173,7 +177,7 @@ async function persistDailyMessage(message) {
 }
 
 export async function getTodayDailyMessage(client, channelId = null, guildId = null) {
-  const dateKey = getUTC7DateKey();
+  const dateKey = getHoyoverseCycleDateKey();
 
   let record = null;
   if (channelId) {
@@ -190,6 +194,28 @@ export async function getTodayDailyMessage(client, channelId = null, guildId = n
   }
   if (!record) {
     record = await DailyCheckinMessageSchema.findOne({ dateKey }).sort({ updatedAt: -1 });
+  }
+
+  // 24-hour fallback: If no record found for the calculated cycle key, fallback to the latest message within 24h
+  if (!record) {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (channelId) {
+      record = await DailyCheckinMessageSchema.findOne({
+        channelId,
+        updatedAt: { $gte: twentyFourHoursAgo },
+      }).sort({ updatedAt: -1 });
+    }
+    if (!record && guildId) {
+      record = await DailyCheckinMessageSchema.findOne({
+        guildId,
+        updatedAt: { $gte: twentyFourHoursAgo },
+      }).sort({ updatedAt: -1 });
+    }
+    if (!record) {
+      record = await DailyCheckinMessageSchema.findOne({
+        updatedAt: { $gte: twentyFourHoursAgo },
+      }).sort({ updatedAt: -1 });
+    }
   }
 
   if (!record) return null;
@@ -212,8 +238,9 @@ export async function modifyUserCheckin({
   gameCode,
   action = "toggle",
   channelId = null,
+  guildId = null,
 }) {
-  const message = await getTodayDailyMessage(client, channelId);
+  const message = await getTodayDailyMessage(client, channelId, guildId);
   if (!message) {
     return {
       success: false,
@@ -350,6 +377,7 @@ async function handleDailyButton(interaction, client) {
       gameCode: selectedGameCode,
       action: "toggle",
       channelId: interaction.channelId,
+      guildId: interaction.guildId,
     });
 
     if (!result.success) {
@@ -459,6 +487,7 @@ export default {
         gameCode,
         action: subcommand,
         channelId: interaction.channelId,
+        guildId: interaction.guildId,
       });
 
       if (!result.success) {
