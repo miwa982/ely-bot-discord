@@ -2,41 +2,101 @@ import { EmbedBuilder } from "discord.js";
 import { BOT_CONFIG, DAILY_GAMES } from "../../constants/bot.js";
 import DailyCheckinMessageSchema from "../../db/DailyCheckin/dailyCheckinMessageSchema.js";
 import DailyCheckinSubscriptionSchema from "../../db/DailyCheckin/dailyCheckinSubscriptionSchema.js";
-import { buildCompletionMap } from "../../commands/daily.js";
 import { getFormatedTodayDate, getHoyoverseCycleDateKey } from "../../utils/date.js";
+import { resolveGuildChannel } from "../../utils/guildConfig.js";
 import { ALL_GAME_CODES } from "./reminderSettingsPanel.js";
 
-/**
- * Fetches the concluding cycle's daily poll message for a channel
- */
-export async function fetchConcludingDailyMessage(channel) {
-  // Try previous cycle key first (at 3am, cycle dateKey rolls over)
-  const prevDateKey = getHoyoverseCycleDateKey(-1);
-  let record = await DailyCheckinMessageSchema.findOne({
-    channelId: channel.id,
-    dateKey: prevDateKey,
-  });
+const mentionRegex = /<@!?(\d+)>/g;
 
-  if (!record) {
-    const currentDateKey = getHoyoverseCycleDateKey(0);
-    record = await DailyCheckinMessageSchema.findOne({
-      channelId: channel.id,
-      dateKey: currentDateKey,
-    });
+/**
+ * Parses user check-ins from a daily poll embed
+ */
+function extractCompletionMap(games, sourceEmbed) {
+  const completionMap = new Map(games.map((game) => [game.code, []]));
+  if (!sourceEmbed?.fields) return completionMap;
+
+  for (const game of games) {
+    const field = sourceEmbed.fields.find((item) => item.name.includes(game.label));
+    if (!field) continue;
+
+    const userIds = [...field.value.matchAll(mentionRegex)].map((match) => match[1]);
+    completionMap.set(game.code, [...new Set(userIds)]);
   }
 
+  return completionMap;
+}
+
+/**
+ * Fetches the concluding or active cycle's daily poll message for a channel/guild
+ */
+export async function fetchConcludingDailyMessage({ channel = null, guild = null, client = null }) {
+  const guildId = guild?.id ?? channel?.guildId ?? null;
+  const channelId = channel?.id ?? null;
+
+  // 1. Resolve the designated daily channel for this guild
+  let dailyChannel = null;
+  if (guild && client) {
+    try {
+      dailyChannel = await resolveGuildChannel(guild, "daily", client);
+    } catch {
+      dailyChannel = null;
+    }
+  }
+  const targetChannelId = dailyChannel?.id ?? channelId;
+
+  // 2. Search for the daily poll message record
+  const currentDateKey = getHoyoverseCycleDateKey(0);
+  const prevDateKey = getHoyoverseCycleDateKey(-1);
+
+  let record = null;
+  // Try current cycle first, then previous cycle
+  for (const dateKey of [currentDateKey, prevDateKey]) {
+    if (targetChannelId) {
+      record = await DailyCheckinMessageSchema.findOne({ channelId: targetChannelId, dateKey });
+    }
+    if (!record && channelId) {
+      record = await DailyCheckinMessageSchema.findOne({ channelId, dateKey });
+    }
+    if (!record && guildId) {
+      record = await DailyCheckinMessageSchema.findOne({ guildId, dateKey });
+    }
+    if (record) break;
+  }
+
+  // 3. Fallback to latest message within last 36 hours
   if (!record) {
-    const twentyEightHoursAgo = new Date(Date.now() - 28 * 60 * 60 * 1000);
-    record = await DailyCheckinMessageSchema.findOne({
-      channelId: channel.id,
-      updatedAt: { $gte: twentyEightHoursAgo },
-    }).sort({ updatedAt: -1 });
+    const thirtySixHoursAgo = new Date(Date.now() - 36 * 60 * 60 * 1000);
+    if (targetChannelId) {
+      record = await DailyCheckinMessageSchema.findOne({
+        channelId: targetChannelId,
+        updatedAt: { $gte: thirtySixHoursAgo },
+      }).sort({ updatedAt: -1 });
+    }
+    if (!record && channelId) {
+      record = await DailyCheckinMessageSchema.findOne({
+        channelId,
+        updatedAt: { $gte: thirtySixHoursAgo },
+      }).sort({ updatedAt: -1 });
+    }
+    if (!record && guildId) {
+      record = await DailyCheckinMessageSchema.findOne({
+        guildId,
+        updatedAt: { $gte: thirtySixHoursAgo },
+      }).sort({ updatedAt: -1 });
+    }
   }
 
   if (!record) return null;
 
+  // 4. Fetch the message from the channel where it was actually posted
   try {
-    const message = await channel.messages.fetch(record.messageId).catch(() => null);
+    const messageChannel = client
+      ? await client.channels.fetch(record.channelId).catch(() => null)
+      : channel;
+
+    if (!messageChannel || !messageChannel.isTextBased()) return null;
+
+    const message = await messageChannel.messages.fetch(record.messageId).catch(() => null);
     return message;
   } catch (err) {
     console.error(`Failed to fetch daily poll message ${record.messageId} for recap:`, err);
@@ -48,18 +108,19 @@ export async function fetchConcludingDailyMessage(channel) {
  * Builds the pretty finalized check-in recap embed for everyone assigned a reminder
  */
 export async function buildDailyRecapEmbed({ channel, guild, client, customDailyMessage = null }) {
-  const dailyMessage = customDailyMessage || (await fetchConcludingDailyMessage(channel));
+  const dailyMessage =
+    customDailyMessage || (await fetchConcludingDailyMessage({ channel, guild, client }));
   const dailyEmbed = dailyMessage?.embeds?.[0] ?? null;
 
-  const completionMap = buildCompletionMap(DAILY_GAMES, dailyEmbed);
+  const completionMap = extractCompletionMap(DAILY_GAMES, dailyEmbed);
 
   // Fetch reminder subscriptions belonging to this guild
   const allSubscriptions = await DailyCheckinSubscriptionSchema.find();
   const guildSubscriptions = allSubscriptions.filter(
-    (s) => !s.guildId || s.guildId === guild.id,
+    (s) => !s.guildId || s.guildId === guild?.id,
   );
 
-  const cycleDateStr = getFormatedTodayDate(-1);
+  const cycleDateStr = getFormatedTodayDate(0);
 
   const recapEmbed = new EmbedBuilder()
     .setAuthor({
@@ -70,7 +131,7 @@ export async function buildDailyRecapEmbed({ channel, guild, client, customDaily
     .setThumbnail("https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif")
     .setColor(BOT_CONFIG.EMBED_COLOR)
     .setFooter({
-      text: "Hoyoverse Daily Reset (03:00 UTC+7) • New cycle has begun! ♪",
+      text: "Hoyoverse Daily Reset (03:00 UTC+7) • New cycle begins at reset! ♪",
     })
     .setTimestamp();
 
@@ -89,16 +150,18 @@ export async function buildDailyRecapEmbed({ channel, guild, client, customDaily
       });
 
       recapEmbed.setDescription(
-        "Hi~ The daily commission window has officially concluded! ✨\n\n" +
-          "No reminder subscriptions were configured, but here are the members who completed check-ins:\n\n" +
+        "Hi~ The daily commission window report is ready! ✨\n\n" +
+          "No reminder subscriptions are currently registered for this server, but here are the members who completed check-ins on today's poll:\n\n" +
           participantLines.join("\n") +
           "\n\n*Tip: Use `/checkin-reminder settings` or right-click any member > `Apps > Reminder Settings` to assign daily reminders!*",
       );
     } else {
       recapEmbed.setDescription(
-        "Hi~ The daily commission window has officially concluded! ✨\n\n" +
-          "No check-ins or reminder subscriptions were recorded for this cycle.\n\n" +
-          "💡 *Assign daily reminders using `/checkin-reminder settings` or `Apps > Reminder Settings` so Elysia can keep you and your friends on track!♪*",
+        "Hi~ The daily commission window report is ready! ✨\n\n" +
+          (dailyEmbed
+            ? "No check-ins or reminder subscriptions were recorded on today's poll yet.\n\n"
+            : "No active daily commission poll was found for today. Use `/daily send` to start today's checklist!\n\n") +
+          "💡 *Assign daily reminders using `/checkin-reminder settings` or `Apps > Reminder Settings` so Elysia can keep everyone on track!♪*",
       );
     }
 
@@ -171,7 +234,7 @@ export async function buildDailyRecapEmbed({ channel, guild, client, customDaily
   );
 
   const descriptionParts = [
-    "Hi~ Another wonderful day has come to a close! The daily commission cycle has concluded at 03:00 UTC+7. Here is the finalized check-in report for all reminder subscribers♪\n",
+    "Hi~ Here is the finalized check-in report for everyone with an assigned reminder!♪\n",
     "📋 **Assigned Reminder Results:**",
     ...subscriberResultLines,
   ];

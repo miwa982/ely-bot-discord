@@ -507,6 +507,16 @@ export default {
         });
       } catch (err) {
         console.error("Error running /daily recap:", err);
+        if (interaction.deferred) {
+          return await interaction.editReply({
+            content: `❌ Could not generate the daily recap: ${err?.message || "Unknown error"}`,
+          }).catch(() => null);
+        } else if (!interaction.replied) {
+          return await interaction.reply({
+            content: `❌ Could not generate the daily recap: ${err?.message || "Unknown error"}`,
+            flags: DISCORD_FLAGS.EPHEMERAL,
+          }).catch(() => null);
+        }
       }
     }
 
