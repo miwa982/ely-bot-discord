@@ -48,6 +48,25 @@ export const getUTC7DateKey = (dayOffset = 0) => {
 };
 
 /**
+ * Returns the date key for Hoyoverse daily reset cycle (03:00 UTC+7 to 03:00 UTC+7 next day).
+ * Prior to 03:00 AM, it counts as yesterday's cycle.
+ * @param {number} dayOffset - 0 = current cycle, 1 = next cycle, -1 = previous cycle
+ * @returns {string} date formatted as YYYY-MM-DD
+ */
+export const getHoyoverseCycleDateKey = (dayOffset = 0) => {
+    // UTC+7 minus 3 hours = UTC+4
+    const cycleDate = new Date(
+        Date.now() + dayOffset * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000,
+    );
+
+    return [
+        cycleDate.getUTCFullYear(),
+        String(cycleDate.getUTCMonth() + 1).padStart(2, "0"),
+        String(cycleDate.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+};
+
+/**
  * Returns start and end Date for a day in UTC+7
  * @param {number} offset - UTC offset in hours (e.g., 7)
  * @param {number} dayOffset - 0 = today, 1 = tomorrow, -1 = yesterday

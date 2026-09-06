@@ -19,7 +19,7 @@ export default {
   run: async ({ interaction, client }) => {
     const targetUser = interaction.targetUser;
 
-    const message = await getTodayDailyMessage(client, interaction.channelId);
+    const message = await getTodayDailyMessage(client, interaction.channelId, interaction.guildId);
     if (!message) {
       return interaction.reply({
         content: "❌ No active daily check-in message found for today. Use `/daily send` first.",

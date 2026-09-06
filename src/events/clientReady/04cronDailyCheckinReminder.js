@@ -2,16 +2,25 @@ import { CronJob } from "cron";
 import { BOT_CONFIG, DAILY_GAMES } from "../../constants/bot.js";
 import DailyCheckinMessageSchema from "../../db/DailyCheckin/dailyCheckinMessageSchema.js";
 import DailyCheckinSubscriptionSchema from "../../db/DailyCheckin/dailyCheckinSubscriptionSchema.js";
-import { getUTC7DateKey } from "../../utils/date.js";
+import { getHoyoverseCycleDateKey } from "../../utils/date.js";
 import { resolveGuildChannel } from "../../utils/guildConfig.js";
 
 const mentionRegex = /<@!?(\d+)>/g;
 
 async function fetchTodayDailyEmbed(channel) {
-  const dailyMessageRecord = await DailyCheckinMessageSchema.findOne({
-    dateKey: getUTC7DateKey(),
+  const dateKey = getHoyoverseCycleDateKey();
+  let dailyMessageRecord = await DailyCheckinMessageSchema.findOne({
+    dateKey,
     channelId: channel.id,
   });
+
+  if (!dailyMessageRecord) {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    dailyMessageRecord = await DailyCheckinMessageSchema.findOne({
+      channelId: channel.id,
+      updatedAt: { $gte: twentyFourHoursAgo },
+    }).sort({ updatedAt: -1 });
+  }
 
   if (!dailyMessageRecord) {
     return null;
@@ -29,10 +38,15 @@ async function fetchTodayDailyEmbed(channel) {
   }
 }
 
-function getUncheckedGames(dailyEmbed, userId) {
-  if (!dailyEmbed) return DAILY_GAMES;
+function getUncheckedGames(dailyEmbed, userId, subscribedGames = null) {
+  const gamesToCheck =
+    subscribedGames && subscribedGames.length > 0
+      ? DAILY_GAMES.filter((g) => subscribedGames.includes(g.code))
+      : DAILY_GAMES;
 
-  return DAILY_GAMES.filter((game) => {
+  if (!dailyEmbed) return gamesToCheck;
+
+  return gamesToCheck.filter((game) => {
     const field = dailyEmbed.fields.find((item) => item.name.includes(game.label));
     if (!field) return true;
 
@@ -75,7 +89,11 @@ export default (client) => {
           );
 
           for (const subscription of guildSubscriptions) {
-            const uncheckedGames = getUncheckedGames(dailyEmbed, subscription.userId);
+            const uncheckedGames = getUncheckedGames(
+              dailyEmbed,
+              subscription.userId,
+              subscription.games,
+            );
             if (uncheckedGames.length === 0) continue;
 
             try {
