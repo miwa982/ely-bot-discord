@@ -22,7 +22,7 @@
 
 * 🎮 **Interactive Daily Commissions Checklist**:
   * Automatically posted every day at **03:00 UTC+7** (aligned with the Hoyoverse server reset).
-  * Interactive toggle buttons with custom emojis for *Genshin Impact*, *Honkai: Star Rail*, *Honkai Impact 3rd*, *Zenless Zone Zero*, and *Wuthering Waves*.
+  * Interactive toggle buttons with custom emojis for *Genshin Impact*, *Honkai: Star Rail*, *Honkai Impact 3rd*, *Zenless Zone Zero*, *Wuthering Waves*, and *Miliastra Wonderland*.
   * **Valid until 03:00 AM UTC+7**: Check in for yourself or friends all night long without getting cut off at midnight!
 * ⏰ **Selective 18:00 (6 PM) Daily Check-in Reminders**:
   * Pings only the members who haven't completed their commissions by 18:00 UTC+7.
