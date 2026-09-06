@@ -68,27 +68,42 @@ function buildReminderMessage(userId, uncheckedGames) {
 }
 
 export default (client) => {
+  // Run hourly at minute 0 in UTC+7 to support individual subscriber reminder times
   new CronJob(
-    "0 18 * * *",
+    "0 * * * *",
     async () => {
-      const guilds = Array.from(client.guilds.cache.values());
+      const currentHour = parseInt(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: BOT_CONFIG.DEFAULT_TIMEZONE,
+          hour: "numeric",
+          hourCycle: "h23",
+        }).format(new Date()),
+        10,
+      );
+
       const subscriptions = await DailyCheckinSubscriptionSchema.find();
       if (!subscriptions.length) return;
 
+      const guilds = Array.from(client.guilds.cache.values());
+
       for (const guild of guilds) {
         try {
+          // Find subscriptions that belong to this guild and match current hour (default is 18)
+          const matchingSubscriptions = subscriptions.filter(
+            (s) =>
+              (!s.guildId || s.guildId === guild.id) &&
+              (s.reminderHour ?? 18) === currentHour,
+          );
+
+          if (!matchingSubscriptions.length) continue;
+
           const channel = await resolveGuildChannel(guild, "daily", client);
           if (!channel || !channel.isTextBased()) continue;
 
           const dailyEmbed = await fetchTodayDailyEmbed(channel);
           if (!dailyEmbed) continue;
 
-          // Find subscriptions that belong to this guild or general subscriptions
-          const guildSubscriptions = subscriptions.filter(
-            (s) => !s.guildId || s.guildId === guild.id,
-          );
-
-          for (const subscription of guildSubscriptions) {
+          for (const subscription of matchingSubscriptions) {
             const uncheckedGames = getUncheckedGames(
               dailyEmbed,
               subscription.userId,

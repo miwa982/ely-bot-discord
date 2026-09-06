@@ -21,27 +21,29 @@ export default {
       .setThumbnail("https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif")
       .addFields(
         {
-          name: "🎮 Daily Commission Checklist (03:00 UTC+7 Reset)",
+          name: "🎮 Daily Commission Checklist (03:00 UTC+7 Reset & Final Recap)",
           value: [
             "`/daily send` → Post today's interactive check-in poll in the daily channel",
+            "`/daily recap` → View the finalized check-in report for all reminder subscribers",
             "`/daily check [game] (user)` → Check in a member (or yourself) for a game",
             "`/daily uncheck [game] (user)` → Remove check-in for a member (or yourself)",
             "`Right-click User → Apps → Daily Check-in` → Interactive popup to check in games for a member",
             "✨ *Interactive Poll Buttons:* Click any game button on the message to toggle check-in instantly!",
-            "⏰ *Valid all night until 3:00 AM UTC+7* matching Hoyoverse server reset.",
+            "🌸 *03:00 AM Finalized Recap Embed:* Before each new cycle begins, Elysia posts a pretty report listing every reminder subscriber's check-in results!",
+            "⏰ *Valid all night until 03:00 AM UTC+7* matching Hoyoverse server reset.",
             "🎮 *Supported Games:* Genshin Impact, Honkai: Star Rail, Honkai Impact 3rd, Zenless Zone Zero, Wuthering Waves, and Miliastra Wonderland!",
           ].join("\n"),
           inline: false,
         },
         {
-          name: "⏰ Check-in Reminders (18:00 UTC+7 Selective Pings)",
+          name: "⏰ Check-in Reminders (Customizable Ping Time & Games)",
           value: [
-            "`Right-click User → Apps → Reminder Settings` → **(Recommended)** Interactive panel to pick which games ping you/others",
-            "`/checkin-reminder settings (user)` → Open the interactive game selection panel",
-            "`/checkin-reminder subscribe (user) (games)` → Subscribe to 18:00 reminder (e.g. `games: gi, hsr, miliastra`)",
-            "`/checkin-reminder unsubscribe (user)` → Stop the 18:00 daily check-in ping for yourself or others",
-            "`/checkin-reminder status (user)` → Check active reminder status & registered games",
-            "🎯 *Zero Spam:* Reminders only ping for your registered games that are still incomplete!",
+            "`Right-click User → Apps → Reminder Settings` → **(Recommended)** Interactive panel to pick games AND your custom ping hour!",
+            "`/checkin-reminder settings (user)` → Open the interactive settings panel",
+            "`/checkin-reminder subscribe (user) (hour) (games)` → Subscribe with custom hour (0-23 UTC+7, default 18:00) and game list",
+            "`/checkin-reminder unsubscribe (user)` → Stop daily check-in reminders for yourself or others",
+            "`/checkin-reminder status (user)` → Check active reminder status, ping time & registered games",
+            "🎯 *Zero Spam:* Reminders only ping at your configured hour if your registered games are still incomplete!",
           ].join("\n"),
           inline: false,
         },

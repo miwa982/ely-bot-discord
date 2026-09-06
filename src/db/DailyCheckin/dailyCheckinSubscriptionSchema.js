@@ -9,6 +9,12 @@ const DailyCheckinSubscriptionSchema = new Schema(
       type: [String],
       default: ["gi", "hsr", "hi3", "zzz", "ww", "miliastra"],
     },
+    reminderHour: {
+      type: Number,
+      default: 18,
+      min: 0,
+      max: 23,
+    },
     subscribedBy: { type: String, default: null },
     subscribedAt: { type: Date, default: Date.now },
   },

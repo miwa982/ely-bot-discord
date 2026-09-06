@@ -8,7 +8,7 @@ import DailyCheckinSubscriptionSchema from "../db/DailyCheckin/dailyCheckinSubsc
 
 const commandInfo = {
   name: "checkin-reminder",
-  description: "Configure 18:00 daily commission check-in reminders",
+  description: "Configure daily commission check-in reminders (games and reminder time)",
 };
 
 export default {
@@ -18,7 +18,7 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("settings")
-        .setDescription("Open the interactive reminder settings panel to select games")
+        .setDescription("Open interactive reminder settings to choose games & ping time")
         .addUserOption((opt) =>
           opt
             .setName("user")
@@ -29,11 +29,19 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("subscribe")
-        .setDescription("Subscribe to the 18:00 reminder (choose games)")
+        .setDescription("Subscribe to daily check-in reminders (choose games and hour)")
         .addUserOption((opt) =>
           opt
             .setName("user")
             .setDescription("Member to subscribe (Defaults to yourself)")
+            .setRequired(false),
+        )
+        .addIntegerOption((opt) =>
+          opt
+            .setName("hour")
+            .setDescription("Hour of day to receive reminder (0-23 in UTC+7, default is 18)")
+            .setMinValue(0)
+            .setMaxValue(23)
             .setRequired(false),
         )
         .addStringOption((opt) =>
@@ -46,7 +54,7 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("unsubscribe")
-        .setDescription("Stop the 18:00 daily check-in reminder")
+        .setDescription("Stop daily check-in reminders")
         .addUserOption((opt) =>
           opt
             .setName("user")
@@ -57,7 +65,7 @@ export default {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("status")
-        .setDescription("Check reminder status and registered games")
+        .setDescription("Check reminder status, ping time, and registered games")
         .addUserOption((opt) =>
           opt
             .setName("user")
@@ -82,24 +90,30 @@ export default {
 
     if (subcommand === "subscribe") {
       const gamesInput = interaction.options.getString("games");
+      const hourInput = interaction.options.getInteger("hour");
 
       // If no specific games provided in slash options, open the interactive panel
       if (!gamesInput) {
         const existing = await DailyCheckinSubscriptionSchema.findOne({ userId: targetUserId });
-        if (!existing) {
-          await DailyCheckinSubscriptionSchema.create({
-            userId: targetUserId,
-            userTag: targetUser.tag,
-            guildId: interaction.guildId,
-            games: ALL_GAME_CODES,
-            subscribedBy: interaction.user.id,
-            subscribedAt: new Date(),
-          });
-        }
+        const updateDoc = {
+          userId: targetUserId,
+          userTag: targetUser.tag,
+          guildId: interaction.guildId,
+          games: existing?.games?.length ? existing.games : ALL_GAME_CODES,
+          reminderHour: hourInput ?? existing?.reminderHour ?? 18,
+          subscribedBy: interaction.user.id,
+          subscribedAt: new Date(),
+        };
+
+        await DailyCheckinSubscriptionSchema.findOneAndUpdate(
+          { userId: targetUserId },
+          updateDoc,
+          { upsert: true, new: true, setDefaultsOnInsert: true },
+        );
 
         const panel = await buildReminderSettingsPanel(targetUser, client, interaction.user);
         return interaction.reply({
-          content: `✅ Reminder configured for <@${targetUserId}>! You can customize specific games below:`,
+          content: `✅ Reminder configured for <@${targetUserId}>! You can customize games and time below:`,
           embeds: panel.embeds,
           components: panel.components,
           flags: DISCORD_FLAGS.EPHEMERAL,
@@ -117,6 +131,8 @@ export default {
       );
 
       const selectedCodes = validCodes.length > 0 ? validCodes : ALL_GAME_CODES;
+      const existing = await DailyCheckinSubscriptionSchema.findOne({ userId: targetUserId });
+      const targetHour = hourInput ?? existing?.reminderHour ?? 18;
 
       await DailyCheckinSubscriptionSchema.findOneAndUpdate(
         { userId: targetUserId },
@@ -125,6 +141,7 @@ export default {
           userTag: targetUser.tag,
           guildId: interaction.guildId,
           games: selectedCodes,
+          reminderHour: targetHour,
           subscribedBy: interaction.user.id,
           subscribedAt: new Date(),
         },
@@ -135,8 +152,10 @@ export default {
         .map((g) => g.label)
         .join(", ");
 
+      const timeFormatted = `${String(targetHour).padStart(2, "0")}:00 UTC+7`;
+
       return interaction.reply({
-        content: `✅ <@${targetUserId}> is subscribed for **${gameNames}**. Elysia will ping at **18:00 UTC+7** in the daily channel if any of these are left incomplete.`,
+        content: `✅ <@${targetUserId}> is subscribed for **${gameNames}**. Elysia will ping at **${timeFormatted}** in the daily channel if any of these are left incomplete.`,
         flags: DISCORD_FLAGS.EPHEMERAL,
       });
     }
@@ -147,7 +166,7 @@ export default {
       return interaction.reply({
         content:
           result.deletedCount > 0
-            ? `✅ Unsubscribed <@${targetUserId}> from the 18:00 daily check-in reminder.`
+            ? `✅ Unsubscribed <@${targetUserId}> from daily check-in reminders.`
             : `ℹ️ <@${targetUserId}> was not subscribed.`,
         flags: DISCORD_FLAGS.EPHEMERAL,
       });
