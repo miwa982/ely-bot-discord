@@ -115,46 +115,50 @@ export function buildDailyEmbed(
 }
 
 export function buildDailyComponents(games, completionMap) {
-  return [
-    new ActionRowBuilder().addComponents(
-      games.map((game) => {
-        const users = completionMap.get(game.code) ?? [];
-        const button = new ButtonBuilder()
-          .setCustomId(`${DAILY_BUTTON_PREFIX}:${game.code}`)
-          .setLabel(String(users.length))
-          .setStyle(users.length > 0 ? ButtonStyle.Success : ButtonStyle.Secondary);
+  const buttons = games.map((game) => {
+    const users = completionMap.get(game.code) ?? [];
+    const button = new ButtonBuilder()
+      .setCustomId(`${DAILY_BUTTON_PREFIX}:${game.code}`)
+      .setLabel(String(users.length))
+      .setStyle(users.length > 0 ? ButtonStyle.Success : ButtonStyle.Secondary);
 
-        if (game.emoji) {
-          button.setEmoji({ id: game.emoji.id, name: game.emoji.name });
-        } else {
-          button.setLabel(`${game.code.toUpperCase()} ${users.length}`);
-        }
+    if (game.emoji) {
+      button.setEmoji({ id: game.emoji.id, name: game.emoji.name });
+    } else {
+      button.setLabel(`${game.code.toUpperCase()} ${users.length}`);
+    }
 
-        return button;
-      }),
-    ),
-  ];
+    return button;
+  });
+
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += 5) {
+    rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+  }
+  return rows;
 }
 
 export function buildUserPickerComponents(games, completionMap, targetUserId) {
-  return [
-    new ActionRowBuilder().addComponents(
-      games.map((game) => {
-        const users = completionMap.get(game.code) ?? [];
-        const isChecked = users.includes(targetUserId);
-        const button = new ButtonBuilder()
-          .setCustomId(`${DAILY_USER_TOGGLE_PREFIX}:${targetUserId}:${game.code}`)
-          .setLabel(game.label)
-          .setStyle(isChecked ? ButtonStyle.Success : ButtonStyle.Secondary);
+  const buttons = games.map((game) => {
+    const users = completionMap.get(game.code) ?? [];
+    const isChecked = users.includes(targetUserId);
+    const button = new ButtonBuilder()
+      .setCustomId(`${DAILY_USER_TOGGLE_PREFIX}:${targetUserId}:${game.code}`)
+      .setLabel(game.label)
+      .setStyle(isChecked ? ButtonStyle.Success : ButtonStyle.Secondary);
 
-        if (game.emoji) {
-          button.setEmoji({ id: game.emoji.id, name: game.emoji.name });
-        }
+    if (game.emoji) {
+      button.setEmoji({ id: game.emoji.id, name: game.emoji.name });
+    }
 
-        return button;
-      }),
-    ),
-  ];
+    return button;
+  });
+
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += 5) {
+    rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+  }
+  return rows;
 }
 
 async function persistDailyMessage(message) {

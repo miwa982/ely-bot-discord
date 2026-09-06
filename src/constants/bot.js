@@ -42,6 +42,7 @@ export const DAILY_GAMES = [
   { code: "hi3", label: "Honkai Impact 3rd", emojiId: "1407766445978554379" },
   { code: "zzz", label: "Zenless Zone Zero", emojiId: "1407987904822771732" },
   { code: "ww", label: "Wuthering Waves", emojiId: "1407987893087113277" },
+  { code: "miliastra", label: "Miliastra Wonderland", emojiId: "1546174118871834724" },
 ];
 
 export const TASK_SUGGESTIONS = [
@@ -52,6 +53,7 @@ export const TASK_SUGGESTIONS = [
   { name: "GI Imaginarium Theater", value: "githeater" },
   { name: "GI Stygian Onslaught", value: "giso" },
   { name: "GI Weekly Bosses", value: "giweeklybosses" },
+  { name: "GI Miliastra Wonderland", value: "gimiliastra" },
   { name: "HSR Memory of Chaos", value: "hsrmoc" },
   { name: "HSR Pure Fiction", value: "hsrpf" },
   { name: "HSR Apocalypse Shadow", value: "hsras" },

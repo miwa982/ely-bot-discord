@@ -7,7 +7,7 @@ const DailyCheckinSubscriptionSchema = new Schema(
     guildId: { type: String, default: null },
     games: {
       type: [String],
-      default: ["gi", "hsr", "hi3", "zzz", "ww"],
+      default: ["gi", "hsr", "hi3", "zzz", "ww", "miliastra"],
     },
     subscribedBy: { type: String, default: null },
     subscribedAt: { type: Date, default: Date.now },
