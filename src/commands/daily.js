@@ -14,6 +14,8 @@ import {
 } from "../utils/date.js";
 import { Elysia } from "../utils/elysia.js";
 import { buildDailyRecapEmbed } from "../components/DailyCheckin/dailyRecapEmbed.js";
+import DailyCheckinSubscriptionSchema from "../db/DailyCheckin/dailyCheckinSubscriptionSchema.js";
+import { ALL_GAME_CODES } from "../components/DailyCheckin/reminderSettingsPanel.js";
 
 const commandInfo = {
   name: "daily",
@@ -22,6 +24,8 @@ const commandInfo = {
 
 export const DAILY_BUTTON_PREFIX = "daily-toggle";
 export const DAILY_USER_TOGGLE_PREFIX = "daily-user-toggle";
+export const DAILY_CHECK_ALL_PREFIX = "daily-check-all-registered";
+export const DAILY_USER_CHECK_ALL_PREFIX = "daily-user-check-all";
 const mentionRegex = /<@!?(\d+)>/g;
 
 export const GAME_CHOICES = DAILY_GAMES.map((game) => ({
@@ -93,6 +97,7 @@ export function buildDailyEmbed(
     .setThumbnail("https://media.tenor.com/eg4wZXTtkLYAAAAj/elysia-miss-pink-elf.gif")
     .setDescription([
       "Tap a game button below to check in. Tap again to undo.",
+      "✨ *Click **🌟 Check My Games** to check in for all your registered games in one tap!*",
       "",
       `**Progress:** ${completedCount} check-in(s) across ${activeGames}/${games.length} game(s)`,
     ].join("\n"))
@@ -132,9 +137,17 @@ export function buildDailyComponents(games, completionMap) {
     return button;
   });
 
+  const checkAllBtn = new ButtonBuilder()
+    .setCustomId(DAILY_CHECK_ALL_PREFIX)
+    .setLabel("Check My Games")
+    .setEmoji("🌟")
+    .setStyle(ButtonStyle.Primary);
+
+  const allButtons = [...buttons, checkAllBtn];
+
   const rows = [];
-  for (let i = 0; i < buttons.length; i += 5) {
-    rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+  for (let i = 0; i < allButtons.length; i += 5) {
+    rows.push(new ActionRowBuilder().addComponents(allButtons.slice(i, i + 5)));
   }
   return rows;
 }
@@ -155,9 +168,17 @@ export function buildUserPickerComponents(games, completionMap, targetUserId) {
     return button;
   });
 
+  const checkAllBtn = new ButtonBuilder()
+    .setCustomId(`${DAILY_USER_CHECK_ALL_PREFIX}:${targetUserId}`)
+    .setLabel("Check Registered Games")
+    .setEmoji("🌟")
+    .setStyle(ButtonStyle.Primary);
+
+  const allButtons = [...buttons, checkAllBtn];
+
   const rows = [];
-  for (let i = 0; i < buttons.length; i += 5) {
-    rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+  for (let i = 0; i < allButtons.length; i += 5) {
+    rows.push(new ActionRowBuilder().addComponents(allButtons.slice(i, i + 5)));
   }
   return rows;
 }
@@ -339,7 +360,43 @@ async function sendDailyPoll(interaction, channel, client, content = null) {
 async function handleDailyButton(interaction, client) {
   if (!interaction.isButton()) return false;
 
-  // 1. Handle main poll toggle button
+  // 1a. Handle "Check My Games" button on main poll
+  if (interaction.customId === DAILY_CHECK_ALL_PREFIX) {
+    const userId = interaction.user.id;
+    const subscription = await DailyCheckinSubscriptionSchema.findOne({ userId });
+    const targetCodes = subscription?.games?.length ? subscription.games : ALL_GAME_CODES;
+
+    const currentEmbed = interaction.message.embeds[0];
+    const games = await getDailyGameOptions(client);
+    const completionMap = buildCompletionMap(games, currentEmbed);
+
+    const allCompleted = targetCodes.every((code) =>
+      completionMap.get(code)?.includes(userId),
+    );
+
+    for (const code of targetCodes) {
+      const userList = completionMap.get(code) || [];
+      if (allCompleted) {
+        completionMap.set(
+          code,
+          userList.filter((id) => id !== userId),
+        );
+      } else {
+        if (!userList.includes(userId)) {
+          completionMap.set(code, [...userList, userId]);
+        }
+      }
+    }
+
+    await interaction.update({
+      embeds: [buildDailyEmbed(games, completionMap, currentEmbed?.title)],
+      components: buildDailyComponents(games, completionMap),
+    });
+
+    return true;
+  }
+
+  // 1b. Handle individual game toggle button on main poll
   if (interaction.customId.startsWith(`${DAILY_BUTTON_PREFIX}:`)) {
     const selectedGameCode = interaction.customId.split(":")[1];
     const currentEmbed = interaction.message.embeds[0];
@@ -373,7 +430,72 @@ async function handleDailyButton(interaction, client) {
     return true;
   }
 
-  // 2. Handle user picker toggle button (from context menu or assign menu)
+  // 2a. Handle "Check Registered Games" in User Picker (Apps > Daily Check-in)
+  if (interaction.customId.startsWith(`${DAILY_USER_CHECK_ALL_PREFIX}:`)) {
+    const targetUserId = interaction.customId.split(":")[1];
+    const subscription = await DailyCheckinSubscriptionSchema.findOne({ userId: targetUserId });
+    const targetCodes = subscription?.games?.length ? subscription.games : ALL_GAME_CODES;
+
+    const message = await getTodayDailyMessage(client, interaction.channelId, interaction.guildId);
+    if (!message?.embeds?.[0]) {
+      await interaction.reply({
+        content: "❌ No active daily check-in poll found.",
+        flags: DISCORD_FLAGS.EPHEMERAL,
+      });
+      return true;
+    }
+
+    const currentEmbed = message.embeds[0];
+    const games = await getDailyGameOptions(client);
+    const completionMap = buildCompletionMap(games, currentEmbed);
+
+    const allCompleted = targetCodes.every((code) =>
+      completionMap.get(code)?.includes(targetUserId),
+    );
+
+    for (const code of targetCodes) {
+      const userList = completionMap.get(code) || [];
+      if (allCompleted) {
+        completionMap.set(
+          code,
+          userList.filter((id) => id !== targetUserId),
+        );
+      } else {
+        if (!userList.includes(targetUserId)) {
+          completionMap.set(code, [...userList, targetUserId]);
+        }
+      }
+    }
+
+    await message.edit({
+      embeds: [buildDailyEmbed(games, completionMap, currentEmbed?.title)],
+      components: buildDailyComponents(games, completionMap),
+    });
+
+    const embed = new EmbedBuilder()
+      .setAuthor({
+        name: "Elysia Check-in Manager",
+        iconURL: "https://media.tenor.com/i-sN2NvSTEYAAAAe/elysia.png",
+      })
+      .setTitle(`Daily Check-in for user`)
+      .setDescription(
+        `Click a button to toggle check-in for <@${targetUserId}> on today's daily checklist.\n\n` +
+          (allCompleted
+            ? `**Latest Update:** ▫️ Unchecked all registered games for <@${targetUserId}>`
+            : `**Latest Update:** ✅ Checked in for all **${targetCodes.length}** registered games for <@${targetUserId}>!`),
+      )
+      .setColor(BOT_CONFIG.EMBED_COLOR)
+      .setTimestamp();
+
+    await interaction.update({
+      embeds: [embed],
+      components: buildUserPickerComponents(games, completionMap, targetUserId),
+    });
+
+    return true;
+  }
+
+  // 2b. Handle individual game toggle button in User Picker
   if (interaction.customId.startsWith(`${DAILY_USER_TOGGLE_PREFIX}:`)) {
     const [, targetUserId, selectedGameCode] = interaction.customId.split(":");
     const result = await modifyUserCheckin({
